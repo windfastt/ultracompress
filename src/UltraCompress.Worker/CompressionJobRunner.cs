@@ -1,4 +1,5 @@
 using UltraCompress.Core;
+using UltraCompress.Core.Advisor;
 using UltraCompress.Worker.Backends;
 using UltraCompress.Worker.Verification;
 
@@ -54,7 +55,6 @@ public sealed class CompressionJobRunner
             throw new FileNotFoundException("Input file not found.", inputPath);
         }
 
-        var recipe = ProfileDefaults.CreateDefaultRecipe(profile);
         var fileInfo = new FileInfo(inputPath);
         var fingerprint = new FileFingerprint
         {
@@ -62,6 +62,8 @@ public sealed class CompressionJobRunner
             SizeBytes = fileInfo.Length,
             LastModifiedUtc = fileInfo.LastWriteTimeUtc,
         };
+
+        var recipe = PipelineAdvisor.SuggestPrimaryRecipe(fingerprint, profile);
 
         var inputBytes = await File.ReadAllBytesAsync(inputPath, cancellationToken);
 
