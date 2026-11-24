@@ -8,7 +8,7 @@ Windows compression **platform** — Engine service, WinUI tray, recipes, benchm
 
 **Docs:** [USER](docs/USER.md) · [Tray](docs/dev/tray-winui.md) · [Testing](docs/testing.md) · [Performance](docs/performance.md)
 
-**Site:** deploy via Actions ([pages.yml](.github/workflows/pages.yml)) → `https://windfastt.github.io/ultracompress/`
+**Site:** [pages.yml](.github/workflows/pages.yml) publishes to branch `gh-pages` → enable **Settings → Pages → gh-pages / root** → `https://windfastt.github.io/ultracompress/`
 
 ## Build
 ```powershell
