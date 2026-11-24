@@ -1,0 +1,38 @@
+name: Bug report
+description: Something broke in Engine, Tray, Worker, or CI
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Tray (WinUI)
+        - Engine / service
+        - Worker / CLI
+        - Installer
+        - CI
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Engine logs under %ProgramData%\UltraCompress\logs if applicable

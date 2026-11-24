@@ -1,48 +1,22 @@
 # UltraCompress
 
-Windows-first file compressor that prioritizes **smallest defensible output** over speed. Phase 1 scaffold: Core contracts, worker CLI with **zstd**, engine service shell, and WinUI tray stub.
+[![CI](https://github.com/windfastt/ultracompress/actions/workflows/ci.yml/badge.svg)](https://github.com/windfastt/ultracompress/actions/workflows/ci.yml)
+[![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+![v0.3.1](https://img.shields.io/badge/version-0.3.1-2dd4bf)
 
-## Requirements
+Windows compression **platform** — Engine service, WinUI tray, recipes, benchmarks, and GitHub Pages site.
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- Windows 10/11 for **UltraCompress.Tray** (WinUI 3, Phase 2)
-- Linux/macOS can build **Core**, **Worker**, **Engine**, and tests
+**Docs:** [USER](docs/USER.md) · [Tray](docs/dev/tray-winui.md) · [Testing](docs/testing.md) · [Performance](docs/performance.md)
+
+**Site:** deploy via Actions ([pages.yml](.github/workflows/pages.yml)) → `https://windfastt.github.io/ultracompress/`
 
 ## Build
-
-```bash
-cd src
-dotnet restore UltraCompress.sln
-dotnet build UltraCompress.sln
+```powershell
+dotnet build src/UltraCompress.sln -c Release
+dotnet test src/UltraCompress.sln -c Release
 ```
 
-On non-Windows hosts, build individual projects (tray targets `net8.0-windows`):
+## Release
+Tag `v0.3.1` triggers draft [release.yml](.github/workflows/release.yml).
 
-```bash
-dotnet build src/UltraCompress.Core/UltraCompress.Core.csproj
-dotnet build src/UltraCompress.Worker/UltraCompress.Worker.csproj
-dotnet test tests/UltraCompress.Core.Tests/UltraCompress.Core.Tests.csproj
-```
-
-## CLI
-
-```bash
-cd src/UltraCompress.Worker
-dotnet run -- compress --input /path/to/file --profile Small
-```
-
-Profiles: `Balanced`, `Small`, `Tiny`, `Laboratory`, `Experimental` — see [docs/USER.md](docs/USER.md).
-
-## Projects
-
-| Project | Role |
-|---------|------|
-| `UltraCompress.Core` | Recipes, fingerprints, backends, profiles |
-| `UltraCompress.Worker` | zstd adapter, round-trip verify, CLI |
-| `UltraCompress.Engine` | Windows service host stub |
-| `UltraCompress.Tray` | WinUI 3 placeholder |
-| `UltraCompress.Core.Tests` | Unit tests |
-
-## CI
-
-GitHub Actions: `dotnet build` + `dotnet test` on `windows-latest`.
+MIT — see [CONTRIBUTING.md](CONTRIBUTING.md), [CHANGELOG.md](CHANGELOG.md).
