@@ -1,6 +1,5 @@
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.AppLifecycle;
-using Windows.ApplicationModel.Activation;
 
 namespace UltraCompress.Tray;
 
@@ -42,7 +41,7 @@ public partial class App : Application
         }
     }
 
-    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
         _mainWindow = new MainWindow();
         _mainWindow.Activate();

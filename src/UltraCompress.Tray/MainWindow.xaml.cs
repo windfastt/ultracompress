@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using UltraCompress.Tray.Services;
 
 namespace UltraCompress.Tray;
@@ -8,7 +9,7 @@ public sealed partial class MainWindow : Window
 {
     private readonly EngineConnectionService _engine = new();
     private readonly System.Threading.Timer _statusTimer;
-    private readonly Microsoft.UI.Xaml.Input.XamlUICommand _showQueueClickCommand = new();
+    private readonly XamlUICommand _showQueueClickCommand = new();
 
     public MainWindow()
     {
@@ -28,7 +29,7 @@ public sealed partial class MainWindow : Window
         Closed += OnClosed;
     }
 
-    public Microsoft.UI.Xaml.Input.IXamlUICommand ShowQueueClickCommand => _showQueueClickCommand;
+    public XamlUICommand ShowQueueClickCommand => _showQueueClickCommand;
 
     public void FocusFromActivation()
     {

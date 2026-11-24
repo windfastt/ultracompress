@@ -3,7 +3,7 @@
 ## Responsibilities
 
 - **Single instance** via Windows App SDK `AppInstance.FindOrRegisterForKey("UltraCompress.Tray")`; secondary activations focus the queue window.
-- **Notify icon** via [H.NotifyIcon.WinUI](https://github.com/HavenDV/H.NotifyIcon) **2.3.2** (latest stable for **net8.0-windows**; 2.4+ requires .NET 10) — `TaskbarIcon`, native `PopupMenu` context menu.
+- **Notify icon** via [H.NotifyIcon.WinUI](https://github.com/HavenDV/H.NotifyIcon) **2.3.2** (latest stable for **net8.0-windows**; 2.4+ requires .NET 10). Requires **Microsoft.WindowsAppSDK 1.6.250108002+** — `TaskbarIcon`, native `PopupMenu` context menu.
 - **Engine IPC** through `UltraCompress.Core.Ipc.NamedPipeEngineClient` → `\\.\pipe\UltraCompress.Engine`.
 
 ## Run locally (Windows)
