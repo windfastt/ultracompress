@@ -1,0 +1,33 @@
+name: GitHub Pages
+
+# Uses gh-pages branch (peaceiris) so deploy succeeds without the Pages REST enablement
+# that GITHUB_TOKEN / Cursor integration cannot create. After merge, set:
+# Settings → Pages → Deploy from branch `gh-pages` / `/ (root)`.
+
+on:
+  push:
+    branches: [main, 'release/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify site artifact
+        run: test -f docs/site/index.html && test -f docs/site/assets/style.css
+
+      - name: Deploy static site to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/site
+          commit_message: 'deploy: update site from ${{ github.sha }}'

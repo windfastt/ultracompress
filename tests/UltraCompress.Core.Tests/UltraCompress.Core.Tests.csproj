@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\UltraCompress.Core\UltraCompress.Core.csproj" />
+    <ProjectReference Include="..\..\src\UltraCompress.Engine\UltraCompress.Engine.csproj" />
   </ItemGroup>
 
 </Project>
