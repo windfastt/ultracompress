@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using UltraCompress.Core.Recipes;
 
 namespace UltraCompress.Core.Tests;
@@ -17,6 +18,7 @@ public sealed class RecipeStoreTests : IDisposable
     public void Dispose()
     {
         _store.Dispose();
+        SqliteConnection.ClearAllPools();
         if (File.Exists(_dbPath))
         {
             File.Delete(_dbPath);

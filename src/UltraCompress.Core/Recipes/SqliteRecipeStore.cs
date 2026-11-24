@@ -36,6 +36,7 @@ public sealed class SqliteRecipeStore : IRecipeStore
         {
             DataSource = _databasePath,
             Mode = SqliteOpenMode.ReadWriteCreate,
+            Pooling = false,
         }.ToString();
 
         _connection = new SqliteConnection(connectionString);
@@ -214,8 +215,14 @@ public sealed class SqliteRecipeStore : IRecipeStore
 
     public void Dispose()
     {
-        _connection?.Dispose();
-        _connection = null;
+        if (_connection is not null)
+        {
+            _connection.Close();
+            _connection.Dispose();
+            _connection = null;
+            SqliteConnection.ClearAllPools();
+        }
+
         _initialized = false;
     }
 
