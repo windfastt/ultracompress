@@ -24,7 +24,7 @@ internal static class Program
 
         var outputOption = new Option<FileInfo?>(
             name: "--output",
-            description: "Output path (default: &lt;input&gt;.uc.zst)")
+            description: "Output path (default: &lt;input&gt;.uc.zst / .uc.br / .uc.deflate by codec)")
         { IsRequired = false };
         outputOption.AddAlias("-o");
 

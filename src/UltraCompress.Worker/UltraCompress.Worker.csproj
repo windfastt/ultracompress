@@ -5,6 +5,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="LibDeflate.Native" Version="1.19.0" />
+    <PackageReference Include="LibDeflate.NET" Version="1.19.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="ZstdSharp.Port" Version="0.9.1" />
   </ItemGroup>

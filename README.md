@@ -1,6 +1,6 @@
 # UltraCompress
 
-Windows-first file compressor that prioritizes **smallest defensible output** over speed. Phase 1 scaffold: Core contracts, worker CLI with **zstd**, engine service shell, and WinUI tray stub.
+Windows-first file compressor that prioritizes **smallest defensible output** over speed. Phase 1 scaffold: Core contracts, worker CLI with **zstd**, **brotli**, and **libdeflate**, engine service shell, and WinUI tray stub.
 
 ## Requirements
 
@@ -38,10 +38,11 @@ Profiles: `Balanced`, `Small`, `Tiny`, `Laboratory`, `Experimental` — see [doc
 | Project | Role |
 |---------|------|
 | `UltraCompress.Core` | Recipes, fingerprints, backends, profiles |
-| `UltraCompress.Worker` | zstd adapter, round-trip verify, CLI |
+| `UltraCompress.Worker` | zstd + brotli + libdeflate adapters, round-trip verify, CLI |
 | `UltraCompress.Engine` | Windows service host stub |
 | `UltraCompress.Tray` | WinUI 3 placeholder |
 | `UltraCompress.Core.Tests` | Unit tests |
+| `UltraCompress.Worker.Tests` | Codec round-trip tests |
 
 ## CI
 

@@ -9,14 +9,23 @@ public sealed class CompressionJobRunner
     private readonly IReadOnlyDictionary<string, ICompressionBackend> _backends;
     private readonly RoundtripVerifier _verifier = new();
 
-    public CompressionJobRunner()
+    public CompressionJobRunner(IReadOnlyDictionary<string, ICompressionBackend>? backends = null)
     {
-        var zstd = new ZstdCompressionBackend();
-        _backends = new Dictionary<string, ICompressionBackend>(StringComparer.OrdinalIgnoreCase)
+        if (backends is not null)
         {
-            [zstd.CodecName] = zstd,
-        };
+            _backends = backends;
+            return;
+        }
+
+        var map = new Dictionary<string, ICompressionBackend>(StringComparer.OrdinalIgnoreCase);
+        Register(map, new ZstdCompressionBackend());
+        Register(map, new BrotliCompressionBackend());
+        Register(map, new LibDeflateCompressionBackend());
+        _backends = map;
     }
+
+    private static void Register(Dictionary<string, ICompressionBackend> map, ICompressionBackend backend) =>
+        map[backend.CodecName] = backend;
 
     public async Task<CompressionJobResult> RunAsync(
         string inputPath,
@@ -52,7 +61,7 @@ public sealed class CompressionJobRunner
         var decompressed = await backend.DecompressAsync(compressed, compressStep, cancellationToken);
         var verification = _verifier.Verify(inputBytes, decompressed, recipe.Verify);
 
-        outputPath ??= inputPath + ".uc.zst";
+        outputPath ??= inputPath + GetDefaultOutputExtension(compressStep.Codec);
         await File.WriteAllBytesAsync(outputPath, compressed, cancellationToken);
 
         return new CompressionJobResult(
@@ -63,6 +72,15 @@ public sealed class CompressionJobRunner
             compressed.Length,
             verification);
     }
+
+    private static string GetDefaultOutputExtension(string codec) =>
+        codec.ToLowerInvariant() switch
+        {
+            "brotli" => ".uc.br",
+            "libdeflate" => ".uc.deflate",
+            "7z" => ".uc.7z",
+            _ => ".uc.zst",
+        };
 }
 
 public sealed record CompressionJobResult(
