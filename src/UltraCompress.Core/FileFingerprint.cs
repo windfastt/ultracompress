@@ -20,6 +20,15 @@ public sealed record FileFingerprint
     /// <summary>Shannon entropy in bits per byte (0–8), when computed.</summary>
     public double? EntropyBitsPerByte { get; init; }
 
+    /// <summary>File extension including the dot, when present.</summary>
+    public string? Extension { get; init; }
+
+    /// <summary>Per-block entropy samples (full scan for small files, spaced samples for large).</summary>
+    public IReadOnlyList<BlockEntropySample> BlockEntropies { get; init; } = Array.Empty<BlockEntropySample>();
+
+    /// <summary>True when global entropy suggests the payload is already compressed or encrypted.</summary>
+    public bool LikelyAlreadyCompressed => EntropyBitsPerByte is >= 7.5;
+
     public string SizeClass => SizeBytes switch
     {
         < 1024 => "tiny",

@@ -6,7 +6,7 @@ namespace UltraCompress.Core.Tests;
 public sealed class FileFingerprintEnricherTests
 {
     [Fact]
-    public void EnrichFromPath_SetsSizeAndLeavesEntropyPlaceholder()
+    public void EnrichFromPath_RunsFullProbe()
     {
         var temp = Path.GetTempFileName();
         try
@@ -19,9 +19,9 @@ public sealed class FileFingerprintEnricherTests
             Assert.Equal(Path.GetFullPath(temp), fp.Path);
             Assert.Equal(payload.Length, fp.SizeBytes);
             Assert.Equal("tiny", fp.SizeClass);
-            Assert.Null(fp.EntropyBitsPerByte);
-            Assert.Null(fp.ContentHashSha256);
-            Assert.Null(fp.DetectedType);
+            Assert.NotNull(fp.EntropyBitsPerByte);
+            Assert.NotNull(fp.ContentHashSha256);
+            Assert.Equal("application/octet-stream", fp.DetectedType);
         }
         finally
         {
@@ -37,7 +37,7 @@ public sealed class FileFingerprintEnricherTests
     }
 
     [Fact]
-    public void Enrich_RefreshesSizeFromDiskAndClearsEntropySlot()
+    public void Enrich_RefreshesFromDiskWhenPathExists()
     {
         var temp = Path.GetTempFileName();
         try
@@ -55,7 +55,7 @@ public sealed class FileFingerprintEnricherTests
             var enriched = FileFingerprintEnricher.Enrich(seed);
 
             Assert.Equal(1, enriched.SizeBytes);
-            Assert.Null(enriched.EntropyBitsPerByte);
+            Assert.NotNull(enriched.EntropyBitsPerByte);
             Assert.True(enriched.LastModifiedUtc > DateTimeOffset.MinValue);
         }
         finally

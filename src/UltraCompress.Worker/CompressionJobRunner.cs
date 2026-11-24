@@ -30,13 +30,7 @@ public sealed class CompressionJobRunner
         }
 
         var recipe = ProfileDefaults.CreateDefaultRecipe(profile);
-        var fileInfo = new FileInfo(inputPath);
-        var fingerprint = new FileFingerprint
-        {
-            Path = Path.GetFullPath(inputPath),
-            SizeBytes = fileInfo.Length,
-            LastModifiedUtc = fileInfo.LastWriteTimeUtc,
-        };
+        var fingerprint = await FileProbe.ProbeAsync(inputPath, cancellationToken: cancellationToken);
 
         var inputBytes = await File.ReadAllBytesAsync(inputPath, cancellationToken);
 
