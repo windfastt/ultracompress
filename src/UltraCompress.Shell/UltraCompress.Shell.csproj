@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>UltraCompress.Shell</RootNamespace>
+    <Description>Explorer context menu stub and engine enqueue client</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\UltraCompress.Core\UltraCompress.Core.csproj" />
+  </ItemGroup>
+</Project>

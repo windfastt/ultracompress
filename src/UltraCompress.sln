@@ -11,7 +11,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltraCompress.Worker", "Ult
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltraCompress.Tray", "UltraCompress.Tray\UltraCompress.Tray.csproj", "{8F686CBF-DB14-41A6-8E0F-DA3E900AB542}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltraCompress.Shell", "UltraCompress.Shell\UltraCompress.Shell.csproj", "{B4E5F6A7-8C9D-4E0F-A1B2-C3D4E5F60718}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltraCompress.Core.Tests", "..\tests\UltraCompress.Core.Tests\UltraCompress.Core.Tests.csproj", "{067DC517-9DD0-4E7D-AFF8-B3680AA7147F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltraCompress.Shell.Tests", "..\tests\UltraCompress.Shell.Tests\UltraCompress.Shell.Tests.csproj", "{C5F60719-9DD0-4E7D-AFF8-B3680AA7148F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,9 +42,17 @@ Global
 		{8F686CBF-DB14-41A6-8E0F-DA3E900AB542}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8F686CBF-DB14-41A6-8E0F-DA3E900AB542}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8F686CBF-DB14-41A6-8E0F-DA3E900AB542}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4E5F6A7-8C9D-4E0F-A1B2-C3D4E5F60718}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4E5F6A7-8C9D-4E0F-A1B2-C3D4E5F60718}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4E5F6A7-8C9D-4E0F-A1B2-C3D4E5F60718}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4E5F6A7-8C9D-4E0F-A1B2-C3D4E5F60718}.Release|Any CPU.Build.0 = Release|Any CPU
 		{067DC517-9DD0-4E7D-AFF8-B3680AA7147F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{067DC517-9DD0-4E7D-AFF8-B3680AA7147F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{067DC517-9DD0-4E7D-AFF8-B3680AA7147F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{067DC517-9DD0-4E7D-AFF8-B3680AA7147F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5F60719-9DD0-4E7D-AFF8-B3680AA7148F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5F60719-9DD0-4E7D-AFF8-B3680AA7148F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5F60719-9DD0-4E7D-AFF8-B3680AA7148F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5F60719-9DD0-4E7D-AFF8-B3680AA7148F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

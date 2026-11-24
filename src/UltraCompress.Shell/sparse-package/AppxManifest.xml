@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
+  xmlns:desktop5="http://schemas.microsoft.com/appx/manifest/desktop/windows10/5"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="com desktop4 desktop5 rescap">
+  <Identity
+    Name="UltraCompress.Shell"
+    Publisher="CN=UltraCompress"
+    Version="0.1.0.0" />
+  <Properties>
+    <DisplayName>UltraCompress Shell</DisplayName>
+    <PublisherDisplayName>UltraCompress</PublisherDisplayName>
+    <Description>Sparse package identity for Explorer context menu (DLL installed beside package).</Description>
+  </Properties>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.22621.0" />
+  </Dependencies>
+  <Capabilities>
+    <rescap:Capability Name="unvirtualizedResources" />
+  </Capabilities>
+  <Applications>
+    <Application Id="App" Executable="UltraCompress.ShellStub.dll" EntryPoint="Windows.FullTrustApplication">
+      <Extensions>
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:SurrogateServer DisplayName="UltraCompress Explorer command">
+              <com:Class
+                Id="A7B8C9D0-E1F2-4A5B-9C8D-7E6F5A4B3C2D"
+                Path="UltraCompress.ShellStub.dll"
+                ThreadingModel="STA" />
+            </com:SurrogateServer>
+          </com:ComServer>
+        </com:Extension>
+        <desktop4:Extension Category="windows.fileExplorerContextMenus">
+          <desktop4:FileExplorerContextMenus>
+            <desktop5:ItemType Type="*">
+              <desktop5:Verb Id="UltraCompressHere" Clsid="A7B8C9D0-E1F2-4A5B-9C8D-7E6F5A4B3C2D" />
+            </desktop5:ItemType>
+            <desktop5:ItemType Type="Directory">
+              <desktop5:Verb Id="UltraCompressHere" Clsid="A7B8C9D0-E1F2-4A5B-9C8D-7E6F5A4B3C2D" />
+            </desktop5:ItemType>
+          </desktop4:FileExplorerContextMenus>
+        </desktop4:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+</Package>

@@ -41,7 +41,9 @@ Profiles: `Balanced`, `Small`, `Tiny`, `Laboratory`, `Experimental` — see [doc
 | `UltraCompress.Worker` | zstd adapter, round-trip verify, CLI |
 | `UltraCompress.Engine` | Windows service host stub |
 | `UltraCompress.Tray` | WinUI 3 placeholder |
+| `UltraCompress.Shell` | Explorer enqueue stub + sparse MSIX manifest |
 | `UltraCompress.Core.Tests` | Unit tests |
+| `UltraCompress.Shell.Tests` | Shell enqueue tests |
 
 ## CI
 
