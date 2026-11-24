@@ -1,0 +1,1 @@
+Golden fixture: mixed scripts — English, ελληνικά, 日本語, emoji 🔧📦, newline-terminated.

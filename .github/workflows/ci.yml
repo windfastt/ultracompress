@@ -26,3 +26,34 @@ jobs:
 
       - name: Test
         run: dotnet test src/UltraCompress.sln -c Release --no-build
+
+  golden-backends:
+    name: Golden fixture backend roundtrips
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Install 7-Zip CLI
+        shell: pwsh
+        run: |
+          choco install 7zip --no-progress -y
+          $sevenZip = Join-Path ${env:ProgramFiles} "7-Zip\7z.exe"
+          if (-not (Test-Path $sevenZip)) { throw "7-Zip CLI not found at $sevenZip" }
+          "ULTRACOMPRESS_7ZA_PATH=$sevenZip" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $bin = Split-Path $sevenZip -Parent
+          echo "$bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Restore
+        run: dotnet restore src/UltraCompress.sln
+
+      - name: Build
+        run: dotnet build src/UltraCompress.sln --no-restore -c Release
+
+      - name: Golden backend roundtrip tests
+        run: dotnet test tests/UltraCompress.Worker.Tests/UltraCompress.Worker.Tests.csproj -c Release --no-build --filter "FullyQualifiedName~GoldenFixture"

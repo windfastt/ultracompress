@@ -1,0 +1,3 @@
+{"id":1,"codec":"zstd","note":"golden"}
+{"id":2,"codec":"7z","method":"LZMA2","solid":false}
+{"id":3,"payload":"base64 omitted","size":128}

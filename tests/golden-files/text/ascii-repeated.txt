@@ -1,0 +1,6 @@
+UltraCompress golden corpus — repetitive ASCII text for dictionary-friendly codecs.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. 0123456789
+UltraCompress golden corpus — repetitive ASCII text for dictionary-friendly codecs.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. 0123456789
+UltraCompress golden corpus — repetitive ASCII text for dictionary-friendly codecs.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. 0123456789

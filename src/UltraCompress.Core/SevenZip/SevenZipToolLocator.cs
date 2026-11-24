@@ -33,7 +33,11 @@ public static class SevenZipToolLocator
             }
         }
 
-        return TryFindOnPath("7za") ?? TryFindOnPath("7za.exe");
+        return TryFindOnPath("7za")
+            ?? TryFindOnPath("7za.exe")
+            ?? TryFindOnPath("7z")
+            ?? TryFindOnPath("7z.exe")
+            ?? TryDefaultWindowsInstall();
     }
 
     public static string ResolveOrThrow(string? installRoot = null)
@@ -62,6 +66,25 @@ public static class SevenZipToolLocator
         return null;
     }
 
+    private static string? TryDefaultWindowsInstall()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return null;
+        }
+
+        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+        foreach (var name in new[] { "7za.exe", "7z.exe" })
+        {
+            var candidate = Path.Combine(programFiles, "7-Zip", name);
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
     private static string? TryFindOnPath(string fileName)
     {
         var pathEnv = Environment.GetEnvironmentVariable("PATH");
