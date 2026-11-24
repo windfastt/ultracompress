@@ -3,25 +3,24 @@ namespace UltraCompress.Engine;
 /// <summary>Volatile engine state surfaced to the tray via named pipes.</summary>
 public sealed class EngineRuntimeState
 {
-    private int _activeJobs;
-    private int _queuedJobs;
-    private volatile bool _paused;
+    private readonly JobQueueService _queue;
+
+    public EngineRuntimeState(JobQueueService queue)
+    {
+        _queue = queue;
+    }
 
     public string ServiceState { get; } = "running";
 
-    public string EngineVersion { get; } = "0.2.0-tray";
+    public string EngineVersion { get; } = "0.3.0-queue";
 
-    public int ActiveJobs => Volatile.Read(ref _activeJobs);
+    public int ActiveJobs => _queue.Counts().active;
 
-    public int QueuedJobs => Volatile.Read(ref _queuedJobs);
+    public int QueuedJobs => _queue.Counts().queued;
 
-    public bool Paused => _paused;
+    public bool Paused => _queue.Paused;
 
-    public void SetPaused(bool paused) => _paused = paused;
+    public JobQueueService Queue => _queue;
 
-    public void SetQueueDepth(int active, int queued)
-    {
-        Volatile.Write(ref _activeJobs, active);
-        Volatile.Write(ref _queuedJobs, queued);
-    }
+    public void SetPaused(bool paused) => _queue.SetPaused(paused);
 }

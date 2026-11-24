@@ -9,4 +9,13 @@ public sealed class EngineRequest
 
     [JsonPropertyName("id")]
     public string? Id { get; init; }
+
+    [JsonPropertyName("path")]
+    public string? Path { get; init; }
+
+    [JsonPropertyName("profile")]
+    public string? Profile { get; init; }
+
+    [JsonPropertyName("jobId")]
+    public string? JobId { get; init; }
 }

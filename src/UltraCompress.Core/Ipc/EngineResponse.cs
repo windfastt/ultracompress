@@ -30,4 +30,10 @@ public sealed class EngineResponse
 
     [JsonPropertyName("success")]
     public bool? Success { get; init; }
+
+    [JsonPropertyName("jobs")]
+    public IReadOnlyList<EngineJobSummary>? Jobs { get; init; }
+
+    [JsonPropertyName("jobId")]
+    public string? JobId { get; init; }
 }

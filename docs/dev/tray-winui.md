@@ -18,8 +18,14 @@ dotnet run --project src/UltraCompress.Tray -p:Platform=x64
 
 Tray polls engine status every 15s and on activation; use **Reconnect to engine** after a service restart.
 
-## Next steps (Phase 2)
+## Queue window
 
-- Queue flyout UI, profile submenu, icon states (idle/working/error)
-- Taskbar progress when queue window is visible
+- **Enqueue** path + profile (Balanced / Small / Tiny / Laboratory)
+- **List / cancel** jobs via pipe (`listJobs`, `enqueueJob`, `cancelJob`, `resumeAll`)
+- Engine logs: `%ProgramData%\UltraCompress\logs\engine-*.log` (Serilog)
+
+## Next steps (Phase 2+)
+
+- Taskbar progress, multi-state tray icons
+- Wire enqueue to real Worker compression (not in-memory stub)
 - Sparse package identity for toasts (see project blueprint)

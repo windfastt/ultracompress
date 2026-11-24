@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using UltraCompress.Core;
 using UltraCompress.Core.Ipc;
 
 namespace UltraCompress.Engine.Ipc;
@@ -103,6 +104,10 @@ public sealed class EnginePipeHostedService : BackgroundService
                 Paused = _state.Paused,
             },
             EngineMessageTypes.PauseAll => PauseAll(request.Id),
+            EngineMessageTypes.ResumeAll => ResumeAll(request.Id),
+            EngineMessageTypes.ListJobs => ListJobs(request.Id),
+            EngineMessageTypes.EnqueueJob => EnqueueJob(request),
+            EngineMessageTypes.CancelJob => CancelJob(request),
             _ => new EngineResponse
             {
                 Type = EngineMessageTypes.Error,
@@ -124,6 +129,86 @@ public sealed class EnginePipeHostedService : BackgroundService
             Id = id,
             Success = true,
             Paused = true,
+        };
+    }
+
+    private EngineResponse ResumeAll(string? id)
+    {
+        _state.SetPaused(false);
+        _logger.LogInformation("ResumeAll requested from tray");
+        return new EngineResponse
+        {
+            Type = EngineMessageTypes.Ack,
+            Id = id,
+            Success = true,
+            Paused = false,
+        };
+    }
+
+    private EngineResponse ListJobs(string? id)
+    {
+        return new EngineResponse
+        {
+            Type = EngineMessageTypes.JobList,
+            Id = id,
+            Jobs = _state.Queue.List(),
+            ActiveJobs = _state.ActiveJobs,
+            QueuedJobs = _state.QueuedJobs,
+            Paused = _state.Paused,
+        };
+    }
+
+    private EngineResponse EnqueueJob(EngineRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Path))
+        {
+            return new EngineResponse
+            {
+                Type = EngineMessageTypes.Error,
+                Id = request.Id,
+                Message = "path is required",
+            };
+        }
+
+        if (!Enum.TryParse<CompressionProfile>(request.Profile, ignoreCase: true, out var profile))
+        {
+            profile = CompressionProfile.Balanced;
+        }
+
+        var jobId = _state.Queue.Enqueue(request.Path.Trim(), profile);
+        _logger.LogInformation("Enqueued job {JobId} {Path} profile {Profile}", jobId, request.Path, profile);
+        return new EngineResponse
+        {
+            Type = EngineMessageTypes.Ack,
+            Id = request.Id,
+            Success = true,
+            JobId = jobId,
+            ActiveJobs = _state.ActiveJobs,
+            QueuedJobs = _state.QueuedJobs,
+        };
+    }
+
+    private EngineResponse CancelJob(EngineRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.JobId))
+        {
+            return new EngineResponse
+            {
+                Type = EngineMessageTypes.Error,
+                Id = request.Id,
+                Message = "jobId is required",
+            };
+        }
+
+        var ok = _state.Queue.Cancel(request.JobId);
+        return new EngineResponse
+        {
+            Type = EngineMessageTypes.Ack,
+            Id = request.Id,
+            Success = ok,
+            Message = ok ? null : "Job not found or running",
+            ActiveJobs = _state.ActiveJobs,
+            QueuedJobs = _state.QueuedJobs,
         };
     }
 

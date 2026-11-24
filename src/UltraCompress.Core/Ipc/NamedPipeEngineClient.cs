@@ -35,6 +35,47 @@ public sealed class NamedPipeEngineClient : IEnginePipeClient, IDisposable
         return response?.Type == EngineMessageTypes.Ack && response.Success == true;
     }
 
+    public async Task<bool> ResumeAllAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await SendAsync(
+            new EngineRequest { Type = EngineMessageTypes.ResumeAll, Id = Guid.NewGuid().ToString("N") },
+            cancellationToken).ConfigureAwait(false);
+        return response?.Type == EngineMessageTypes.Ack && response.Success == true;
+    }
+
+    public Task<EngineResponse?> ListJobsAsync(CancellationToken cancellationToken = default)
+    {
+        return SendAsync(
+            new EngineRequest { Type = EngineMessageTypes.ListJobs, Id = Guid.NewGuid().ToString("N") },
+            cancellationToken);
+    }
+
+    public Task<EngineResponse?> EnqueueJobAsync(string path, string profile, CancellationToken cancellationToken = default)
+    {
+        return SendAsync(
+            new EngineRequest
+            {
+                Type = EngineMessageTypes.EnqueueJob,
+                Id = Guid.NewGuid().ToString("N"),
+                Path = path,
+                Profile = profile,
+            },
+            cancellationToken);
+    }
+
+    public async Task<bool> CancelJobAsync(string jobId, CancellationToken cancellationToken = default)
+    {
+        var response = await SendAsync(
+            new EngineRequest
+            {
+                Type = EngineMessageTypes.CancelJob,
+                Id = Guid.NewGuid().ToString("N"),
+                JobId = jobId,
+            },
+            cancellationToken).ConfigureAwait(false);
+        return response?.Type == EngineMessageTypes.Ack && response.Success == true;
+    }
+
     private async Task<EngineResponse?> SendAsync(EngineRequest request, CancellationToken cancellationToken)
     {
         await using var pipe = new NamedPipeClientStream(
