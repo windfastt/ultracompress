@@ -21,7 +21,21 @@ public static class ProfileDefaults
             _ => 3,
         };
 
-        recipe.Steps.Add(new CompressStep { Codec = "zstd", Level = level });
+        if (profile is CompressionProfile.Laboratory)
+        {
+            recipe.Steps.Add(new CompressStep
+            {
+                Codec = "7z",
+                Level = 9,
+                Method = "LZMA2",
+                Solid = false,
+                Threads = 0,
+            });
+        }
+        else
+        {
+            recipe.Steps.Add(new CompressStep { Codec = "zstd", Level = level });
+        }
 
         if (profile is CompressionProfile.Small or CompressionProfile.Tiny or CompressionProfile.Laboratory)
         {

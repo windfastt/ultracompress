@@ -9,13 +9,38 @@ public sealed class CompressionJobRunner
     private readonly IReadOnlyDictionary<string, ICompressionBackend> _backends;
     private readonly RoundtripVerifier _verifier = new();
 
-    public CompressionJobRunner()
+    public CompressionJobRunner(IReadOnlyDictionary<string, ICompressionBackend>? backends = null)
     {
-        var zstd = new ZstdCompressionBackend();
-        _backends = new Dictionary<string, ICompressionBackend>(StringComparer.OrdinalIgnoreCase)
+        if (backends is not null)
         {
-            [zstd.CodecName] = zstd,
-        };
+            _backends = backends;
+            return;
+        }
+
+        var map = new Dictionary<string, ICompressionBackend>(StringComparer.OrdinalIgnoreCase);
+        RegisterIfAvailable(map, new ZstdCompressionBackend());
+        RegisterIfAvailable(map, TryCreateSevenZipBackend());
+        _backends = map;
+    }
+
+    private static void RegisterIfAvailable(Dictionary<string, ICompressionBackend> map, ICompressionBackend? backend)
+    {
+        if (backend is not null)
+        {
+            map[backend.CodecName] = backend;
+        }
+    }
+
+    private static SevenZipProcessBackend? TryCreateSevenZipBackend()
+    {
+        try
+        {
+            return new SevenZipProcessBackend();
+        }
+        catch (FileNotFoundException)
+        {
+            return null;
+        }
     }
 
     public async Task<CompressionJobResult> RunAsync(
@@ -52,7 +77,7 @@ public sealed class CompressionJobRunner
         var decompressed = await backend.DecompressAsync(compressed, compressStep, cancellationToken);
         var verification = _verifier.Verify(inputBytes, decompressed, recipe.Verify);
 
-        outputPath ??= inputPath + ".uc.zst";
+        outputPath ??= inputPath + GetDefaultOutputExtension(compressStep.Codec);
         await File.WriteAllBytesAsync(outputPath, compressed, cancellationToken);
 
         return new CompressionJobResult(
@@ -63,6 +88,9 @@ public sealed class CompressionJobRunner
             compressed.Length,
             verification);
     }
+
+    private static string GetDefaultOutputExtension(string codec) =>
+        codec.Equals("7z", StringComparison.OrdinalIgnoreCase) ? ".uc.7z" : ".uc.zst";
 }
 
 public sealed record CompressionJobResult(

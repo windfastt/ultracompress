@@ -22,3 +22,4 @@ Thumbs.db
 
 ## UltraCompress local data (runtime)
 *.uc.zst
+*.uc.7z
