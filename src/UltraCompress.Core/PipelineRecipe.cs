@@ -94,12 +94,13 @@ public sealed class CompressStep : PipelineStep
 
     public int? DictSizeKb { get; set; }
 
-    /// <summary>Backend-specific method (e.g. LZMA2 for 7z).</summary>
+    /// <summary>7-Zip method flag (e.g. LZMA2, LZMA, PPMd).</summary>
     public string? Method { get; set; }
 
+    /// <summary>7z solid archive; meaningful for multi-file archives.</summary>
     public bool? Solid { get; set; }
 
-    /// <summary>Worker thread count; 0 means auto.</summary>
+    /// <summary>7-Zip -mmt thread count; 0 = use all logical CPUs.</summary>
     public int? Threads { get; set; }
 }
 
