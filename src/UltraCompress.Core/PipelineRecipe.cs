@@ -21,11 +21,13 @@ public sealed class PipelineRecipe
 [JsonDerivedType(typeof(CompressStep), "compress")]
 public abstract class PipelineStep
 {
+    [JsonIgnore]
     public abstract string Op { get; }
 }
 
 public sealed class PreprocessStep : PipelineStep
 {
+    [JsonIgnore]
     public override string Op => "preprocess";
 
     public string Name { get; set; } = "noop";
@@ -35,6 +37,7 @@ public sealed class PreprocessStep : PipelineStep
 
 public sealed class CompressStep : PipelineStep
 {
+    [JsonIgnore]
     public override string Op => "compress";
 
     public string Codec { get; set; } = "zstd";
