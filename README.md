@@ -8,7 +8,11 @@ Windows compression **platform** — Engine service, WinUI tray, worker CLI (**z
 
 **Docs:** [USER](docs/USER.md) · [Tray](docs/dev/tray-winui.md) · [Testing](docs/testing.md) · [Performance](docs/performance.md)
 
+<<<<<<< HEAD
 **Site:** [pages.yml](.github/workflows/pages.yml) publishes to branch `gh-pages` → `https://windfastt.github.io/ultracompress/`
+=======
+**Product site:** [ultracompress landing](https://windfastt.github.io/ultracompress/) (GitHub Pages). **Roadmap:** [docs/release-roadmap.md](docs/release-roadmap.md).
+>>>>>>> e82fae4 (docs: product marketing site and release alignment)
 
 ## Build
 ```powershell
