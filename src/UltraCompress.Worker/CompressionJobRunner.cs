@@ -55,13 +55,7 @@ public sealed class CompressionJobRunner
             throw new FileNotFoundException("Input file not found.", inputPath);
         }
 
-        var fileInfo = new FileInfo(inputPath);
-        var fingerprint = new FileFingerprint
-        {
-            Path = Path.GetFullPath(inputPath),
-            SizeBytes = fileInfo.Length,
-            LastModifiedUtc = fileInfo.LastWriteTimeUtc,
-        };
+        var fingerprint = await FileProbe.ProbeAsync(inputPath, cancellationToken: cancellationToken);
 
         var recipe = PipelineAdvisor.SuggestPrimaryRecipe(fingerprint, profile);
 
