@@ -1,0 +1,21 @@
+7-Zip (7za, 7z.dll, 7za.dll)
+Copyright (C) 1999-2024 Igor Pavlov
+
+7-Zip is free software licensed under the GNU Lesser General Public
+License (LGPL) version 2.1 or later. See https://www.gnu.org/licenses/.
+
+You may obtain the complete corresponding source code for the version
+of 7-Zip bundled with UltraCompress from:
+
+  https://www.7-zip.org/download.html
+  https://sourceforge.net/projects/sevenzip/
+
+For three years after each distribution of UltraCompress containing
+these binaries, UltraCompress will provide the corresponding source
+on written request to the contact published in the product About / Legal
+screen, or at the URL documented in the installer release notes.
+
+This file satisfies the attribution requirement. The full LGPL text is
+available at https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt.
+
+Official project site: https://www.7-zip.org/

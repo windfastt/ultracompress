@@ -1,0 +1,5 @@
+# Binaries are shipped with the installer, not stored in git.
+*.exe
+*.dll
+*.so
+*.dylib

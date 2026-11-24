@@ -42,6 +42,15 @@ public sealed class CompressStep : PipelineStep
     public int Level { get; set; } = 3;
 
     public int? DictSizeKb { get; set; }
+
+    /// <summary>7-Zip method flag (e.g. LZMA2, LZMA, PPMd).</summary>
+    public string? Method { get; set; }
+
+    /// <summary>7z solid archive; meaningful for multi-file archives.</summary>
+    public bool? Solid { get; set; }
+
+    /// <summary>7-Zip -mmt thread count; 0 = use all logical CPUs.</summary>
+    public int? Threads { get; set; }
 }
 
 public sealed class VerifyOptions
