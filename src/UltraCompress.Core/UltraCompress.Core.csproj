@@ -6,4 +6,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="JsonSchema.Net" Version="7.2.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\schemas\pipeline-recipe.schema.json" Link="Schemas\pipeline-recipe.schema.json" />
+    <EmbeddedResource Include="..\..\schemas\file-fingerprint.schema.json" Link="Schemas\file-fingerprint.schema.json" />
+  </ItemGroup>
+
 </Project>

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ultracompress.dev/schemas/file-fingerprint.schema.json",
+  "title": "FileFingerprint",
+  "description": "Static probe of a file used for advisor, caching, and recipe lookup.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["path", "sizeBytes", "lastModifiedUtc"],
+  "properties": {
+    "path": { "type": "string", "minLength": 1 },
+    "sizeBytes": { "type": "integer", "minimum": 0 },
+    "lastModifiedUtc": { "type": "string", "format": "date-time" },
+    "contentHashSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 of file contents (hex, lowercase)."
+    },
+    "detectedType": {
+      "type": "string",
+      "description": "MIME or magic label (e.g. application/pdf)."
+    },
+    "entropyBitsPerByte": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 8,
+      "description": "Shannon entropy in bits per byte."
+    },
+    "sizeClass": {
+      "type": "string",
+      "enum": ["tiny", "small", "medium", "large"],
+      "description": "Derived size bucket; optional when persisting probe output."
+    }
+  }
+}

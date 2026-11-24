@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ultracompress.dev/schemas/compression-profile.schema.json",
+  "title": "CompressionProfile",
+  "type": "string",
+  "enum": ["Balanced", "Small", "Tiny", "Laboratory", "Experimental"]
+}
