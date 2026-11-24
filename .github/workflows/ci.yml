@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, 'release/**', ultracompress-main, 'feat/**']
+    branches: [main, 'release/**', ultracompress-main, 'feat/**', 'docs/**']
   pull_request:
     branches: [main, ultracompress-main]
 
