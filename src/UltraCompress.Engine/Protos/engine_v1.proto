@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+option csharp_namespace = "UltraCompress.Engine.Grpc";
+
+package ultracompress.engine.v1;
+
+service EngineService {
+  rpc Enqueue (EnqueueRequest) returns (EnqueueResponse);
+  rpc GetJob (GetJobRequest) returns (JobSnapshot);
+  rpc ListJobs (ListJobsRequest) returns (ListJobsResponse);
+  rpc CancelJob (CancelJobRequest) returns (CancelJobResponse);
+  rpc SetQueuePaused (SetQueuePausedRequest) returns (SetQueuePausedResponse);
+  rpc GetQueueState (GetQueueStateRequest) returns (QueueState);
+  rpc WatchJobs (WatchJobsRequest) returns (stream JobEvent);
+}
+
+message EnqueueRequest {
+  repeated string input_paths = 1;
+  string profile = 2;
+  optional string output_path = 3;
+}
+
+message EnqueueResponse {
+  repeated string job_ids = 1;
+}
+
+message GetJobRequest {
+  string job_id = 1;
+}
+
+message ListJobsRequest {
+  int32 limit = 1;
+}
+
+message ListJobsResponse {
+  repeated JobSnapshot jobs = 1;
+}
+
+message CancelJobRequest {
+  string job_id = 1;
+}
+
+message CancelJobResponse {
+  bool cancelled = 1;
+}
+
+message SetQueuePausedRequest {
+  bool paused = 1;
+}
+
+message SetQueuePausedResponse {
+  bool paused = 1;
+}
+
+message GetQueueStateRequest {}
+
+message QueueState {
+  bool paused = 1;
+  int32 queued_count = 2;
+  int32 running_count = 3;
+}
+
+message WatchJobsRequest {
+  int32 poll_interval_ms = 1;
+}
+
+message JobEvent {
+  JobSnapshot job = 1;
+}
+
+message JobSnapshot {
+  string job_id = 1;
+  string input_path = 2;
+  optional string output_path = 3;
+  string profile = 4;
+  CompressionJobStatus status = 5;
+  int64 created_at_unix_ms = 6;
+  optional int64 started_at_unix_ms = 7;
+  optional int64 completed_at_unix_ms = 8;
+  optional string error_message = 9;
+  optional int64 original_bytes = 10;
+  optional int64 compressed_bytes = 11;
+}
+
+enum CompressionJobStatus {
+  COMPRESSION_JOB_STATUS_UNSPECIFIED = 0;
+  COMPRESSION_JOB_STATUS_QUEUED = 1;
+  COMPRESSION_JOB_STATUS_RUNNING = 2;
+  COMPRESSION_JOB_STATUS_COMPLETED = 3;
+  COMPRESSION_JOB_STATUS_FAILED = 4;
+  COMPRESSION_JOB_STATUS_CANCELLED = 5;
+}

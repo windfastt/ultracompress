@@ -1,20 +1,36 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-UltraCompress.Engine-24a5b58f-31a2-459c-9a2b-5718b8868c24</UserSecretsId>
+    <RootNamespace>UltraCompress.Engine</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.67.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
-    <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\UltraCompress.Core\UltraCompress.Core.csproj" />
+    <Protobuf Include="Protos\engine_v1.proto" GrpcServices="Server" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UltraCompress.Core\UltraCompress.Core.csproj" />
+    <ProjectReference Include="..\UltraCompress.Worker\UltraCompress.Worker.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <Target Name="CopyWorkerOutputs" AfterTargets="Build">
+    <ItemGroup>
+      <WorkerArtifacts Include="$(MSBuildThisFileDirectory)..\UltraCompress.Worker\bin\$(Configuration)\$(TargetFramework)\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(WorkerArtifacts)"
+          DestinationFolder="$(OutputPath)%(RecursiveDir)"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(MSBuildThisFileDirectory)..\UltraCompress.Worker\bin\$(Configuration)\$(TargetFramework)')" />
+  </Target>
 </Project>
