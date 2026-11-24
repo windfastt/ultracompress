@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>UltraCompress.WorkerAgent</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.28.3" />
+    <PackageReference Include="Grpc.Tools" Version="2.67.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Protobuf Include="..\UltraCompress.Engine\Protos\worker_v1.proto" GrpcServices="Client" Link="Protos\worker_v1.proto" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UltraCompress.Core\UltraCompress.Core.csproj" />
+    <ProjectReference Include="..\UltraCompress.Worker\UltraCompress.Worker.csproj" />
+  </ItemGroup>
+
+</Project>

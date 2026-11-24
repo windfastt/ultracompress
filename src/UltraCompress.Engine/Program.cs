@@ -1,6 +1,7 @@
 using Serilog;
 using UltraCompress.Core;
 using UltraCompress.Core.Jobs;
+using UltraCompress.Core.Workers;
 using UltraCompress.Engine.Grpc;
 using UltraCompress.Engine.Services;
 using UltraCompress.Engine;
@@ -35,23 +36,65 @@ try
         options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.StopHost;
     });
 
+    var distributedSection = builder.Configuration.GetSection("Engine:DistributedWorkers");
+    var distributedSettings = distributedSection.Get<DistributedWorkerSettings>() ?? new DistributedWorkerSettings();
+    builder.Services.Configure<DistributedWorkerSettings>(distributedSection);
+
     builder.Services.AddSingleton<IJobQueue, InMemoryJobQueue>();
+    builder.Services.AddSingleton(sp =>
+    {
+        var settings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<DistributedWorkerSettings>>().Value;
+        return new WorkerFleetRegistry(TimeSpan.FromSeconds(settings.HeartbeatIntervalSeconds * 2.5));
+    });
+    builder.Services.AddSingleton<IWorkerStepQueue>(sp =>
+    {
+        var settings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<DistributedWorkerSettings>>().Value;
+        return new InMemoryWorkerStepQueue(TimeSpan.FromSeconds(settings.LeaseTtlSeconds));
+    });
+    builder.Services.AddSingleton<DistributedWorkerRuntime>();
     builder.Services.AddSingleton<WorkerProcessRunner>();
     builder.Services.AddHostedService<EngineStartupHostedService>();
     builder.Services.AddHostedService<JobSchedulerHostedService>();
+    builder.Services.AddHostedService<WorkerLeaseReaperHostedService>();
     builder.Services.AddGrpc();
 
-    var grpcPort = builder.Configuration.GetValue("Engine:GrpcPort", EnginePaths.DefaultGrpcPort);
+    var clientGrpcPort = builder.Configuration.GetValue("Engine:GrpcPort", EnginePaths.DefaultGrpcPort);
+    var workerGrpcPort = builder.Configuration.GetValue(
+        "Engine:DistributedWorkers:WorkerGrpcPort",
+        DistributedWorkerSettings.DefaultWorkerGrpcPort);
+    var workerListenHost = builder.Configuration.GetValue(
+        "Engine:DistributedWorkers:WorkerListenHost",
+        distributedSettings.WorkerListenHost) ?? "0.0.0.0";
+
     builder.WebHost.ConfigureKestrel(options =>
     {
-        options.ListenLocalhost(grpcPort, listenOptions => listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2);
+        options.ListenLocalhost(clientGrpcPort, listenOptions =>
+            listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2);
+
+        if (distributedSettings.Enabled)
+        {
+            options.Listen(System.Net.IPAddress.Parse(workerListenHost), workerGrpcPort, listenOptions =>
+                listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2);
+        }
     });
 
     var app = builder.Build();
     app.MapGrpcService<EngineGrpcService>();
+
+    if (distributedSettings.Enabled)
+    {
+        app.MapGrpcService<WorkerCoordinationGrpcService>();
+    }
+
     app.MapGet("/health", () => Results.Ok(new { status = "ok", service = EngineConstants.ServiceName }));
 
-    Log.Information("UltraCompress.Engine listening on localhost:{Port} (gRPC)", grpcPort);
+    Log.Information(
+        "UltraCompress.Engine client gRPC on localhost:{ClientPort}; distributed worker gRPC {WorkerState} on {WorkerHost}:{WorkerPort}",
+        clientGrpcPort,
+        distributedSettings.Enabled ? "enabled" : "disabled",
+        workerListenHost,
+        workerGrpcPort);
+
     await app.RunAsync();
 }
 catch (Exception ex)

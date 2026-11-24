@@ -58,6 +58,9 @@ message QueueState {
   bool paused = 1;
   int32 queued_count = 2;
   int32 running_count = 3;
+  int32 connected_worker_count = 4;
+  int32 degraded_worker_count = 5;
+  bool distributed_workers_enabled = 6;
 }
 
 message WatchJobsRequest {

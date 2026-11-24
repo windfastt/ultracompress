@@ -28,4 +28,18 @@ public static class EnginePaths
 
         return Path.Combine(Path.GetTempPath(), "ultracompress", "staging");
     }
+
+    public static string GetDefaultWorkerTokenPath()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            return Path.Combine(programData, "UltraCompress", "worker.token");
+        }
+
+        var overridePath = Environment.GetEnvironmentVariable("ULTRACOMPRESS_WORKER_TOKEN_FILE");
+        return string.IsNullOrWhiteSpace(overridePath)
+            ? Path.Combine(Path.GetTempPath(), "ultracompress", "worker.token")
+            : overridePath;
+    }
 }

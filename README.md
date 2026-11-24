@@ -39,7 +39,8 @@ Profiles: `Balanced`, `Small`, `Tiny`, `Laboratory`, `Experimental` — see [doc
 |---------|------|
 | `UltraCompress.Core` | Recipes, fingerprints, backends, profiles |
 | `UltraCompress.Worker` | zstd adapter, round-trip verify, CLI |
-| `UltraCompress.Engine` | Windows service host, gRPC on `localhost:17832`, job queue |
+| `UltraCompress.Engine` | Windows service host, localhost job gRPC (`:17832`), optional LAN worker gRPC (`:17833`) |
+| `UltraCompress.WorkerAgent` | gRPC client: heartbeat, lease steps, run compress on LAN machines |
 | `UltraCompress.Tray` | WinUI 3 placeholder |
 | `UltraCompress.Core.Tests` | Unit tests |
 
@@ -54,6 +55,8 @@ dotnet run
 ```
 
 RPC surface (`engine_v1.proto`): `Enqueue`, `GetJob`, `ListJobs`, `CancelJob`, `SetQueuePaused`, `GetQueueState`, `WatchJobs`.
+
+Distributed workers (`worker_v1.proto`, optional): `Heartbeat`, `LeaseStep`, `ReportStepResult` — see [docs/DISTRIBUTED_WORKERS.md](docs/DISTRIBUTED_WORKERS.md). Builds on PR #3 localhost `EngineService`; worker port uses a shared token file.
 
 ## CI
 
