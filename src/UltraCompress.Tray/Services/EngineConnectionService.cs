@@ -2,9 +2,11 @@ using UltraCompress.Core.Ipc;
 
 namespace UltraCompress.Tray.Services;
 
-public sealed class EngineConnectionService : IDisposable
+internal sealed class EngineConnectionService : IDisposable
 {
     private readonly NamedPipeEngineClient _client = new();
+
+    public IEnginePipeClient PipeClient => _client;
 
     public Task<bool> PingAsync(CancellationToken cancellationToken = default) =>
         _client.PingAsync(cancellationToken);

@@ -30,6 +30,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\UltraCompress.Core\UltraCompress.Core.csproj" />
+    <ProjectReference Include="..\UltraCompress.Desktop.Presentation\UltraCompress.Desktop.Presentation.csproj" />
   </ItemGroup>
 
   <ItemGroup>
