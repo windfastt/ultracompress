@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using UltraCompress.Core.Intelligence;
+
 namespace UltraCompress.Core;
 
 /// <summary>
@@ -14,7 +17,7 @@ public sealed record FileFingerprint
     /// <summary>SHA-256 of file contents (hex, lowercase).</summary>
     public string? ContentHashSha256 { get; init; }
 
-    /// <summary>Detected MIME or magic label (e.g. application/pdf).</summary>
+    /// <summary>Detected MIME or magic label (e.g. application/pdf, video/mp4).</summary>
     public string? DetectedType { get; init; }
 
     /// <summary>Shannon entropy in bits per byte (0–8), when computed.</summary>
@@ -25,6 +28,13 @@ public sealed record FileFingerprint
 
     /// <summary>Per-block entropy samples (full scan for small files, spaced samples for large).</summary>
     public IReadOnlyList<BlockEntropySample> BlockEntropies { get; init; } = Array.Empty<BlockEntropySample>();
+
+    /// <summary>
+    /// Rich O(1) multi-window content inspection attached at runtime for explainable strategy selection.
+    /// Excluded from persistence JSON so persisted fingerprints stay compliant with file-fingerprint.schema.json.
+    /// </summary>
+    [JsonIgnore]
+    public ContentInspectionResult? Inspection { get; init; }
 
     /// <summary>True when global entropy suggests the payload is already compressed or encrypted.</summary>
     public bool LikelyAlreadyCompressed => EntropyBitsPerByte is >= 7.5;

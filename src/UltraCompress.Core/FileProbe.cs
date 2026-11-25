@@ -1,15 +1,15 @@
 using System.Buffers;
 using System.Security.Cryptography;
+using UltraCompress.Core.Intelligence;
 
 namespace UltraCompress.Core;
 
 /// <summary>
-/// Static file probe: size metadata, content hash, magic type sniff, global and blocked entropy.
+/// Static file probe combining multi-window O(1) <see cref="ContentInspector"/> analysis
+/// with optional full-stream SHA-256 hashing and blocked entropy sampling.
 /// </summary>
 public static class FileProbe
 {
-    private const int HeaderSniffBytes = 512;
-
     public static async Task<FileFingerprint> ProbeAsync(
         string path,
         FileProbeOptions? options = null,
@@ -34,43 +34,43 @@ public static class FileProbe
             fullPath,
             FileMode.Open,
             FileAccess.Read,
-            FileShare.Read,
+            FileShare.ReadWrite,
             bufferSize: 81920,
-            useAsync: true);
+            FileOptions.Asynchronous | FileOptions.RandomAccess);
+
+        var inspection = await ContentInspector.InspectAsync(
+            stream,
+            fullPath,
+            new ContentInspectorOptions { WindowSizeBytes = Math.Max(512, options.BlockSizeBytes) },
+            cancellationToken);
 
         string? contentHash = null;
-        byte[] header = new byte[HeaderSniffBytes];
-        int headerRead = 0;
-
         if (options.ComputeContentHash)
         {
-            var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-            var buffer = ArrayPool<byte>.Shared.Rent(81920);
-            try
+            if (inspection.IsFullContentHash && fileInfo.Length > 0)
             {
-                int read;
-                while ((read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken)) > 0)
+                contentHash = inspection.SampleFingerprintSha256;
+            }
+            else
+            {
+                stream.Position = 0;
+                using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+                var buffer = ArrayPool<byte>.Shared.Rent(81920);
+                try
                 {
-                    if (headerRead < header.Length)
+                    int read;
+                    while ((read = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken)) > 0)
                     {
-                        var copy = Math.Min(read, header.Length - headerRead);
-                        buffer.AsSpan(0, copy).CopyTo(header.AsSpan(headerRead));
-                        headerRead += copy;
+                        hasher.AppendData(buffer, 0, read);
                     }
 
-                    hasher.AppendData(buffer, 0, read);
+                    contentHash = Convert.ToHexString(hasher.GetHashAndReset()).ToLowerInvariant();
                 }
-
-                contentHash = Convert.ToHexString(hasher.GetHashAndReset()).ToLowerInvariant();
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
+                }
             }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(buffer);
-            }
-        }
-        else
-        {
-            headerRead = await stream.ReadAsync(header.AsMemory(0, header.Length), cancellationToken);
         }
 
         stream.Position = 0;
@@ -78,9 +78,8 @@ public static class FileProbe
             stream,
             fileInfo.Length,
             options,
+            inspection,
             cancellationToken);
-
-        var detectedType = ContentTypeSniffer.Sniff(header.AsSpan(0, headerRead), extension);
 
         return new FileFingerprint
         {
@@ -89,9 +88,10 @@ public static class FileProbe
             LastModifiedUtc = fileInfo.LastWriteTimeUtc,
             Extension = string.IsNullOrEmpty(extension) ? null : extension,
             ContentHashSha256 = contentHash,
-            DetectedType = detectedType,
+            DetectedType = inspection.Signature.MimeType,
             EntropyBitsPerByte = globalEntropy,
             BlockEntropies = blockSamples,
+            Inspection = inspection,
         };
     }
 
@@ -99,11 +99,25 @@ public static class FileProbe
         Stream stream,
         long fileLength,
         FileProbeOptions options,
+        ContentInspectionResult inspection,
         CancellationToken cancellationToken)
     {
         if (fileLength == 0)
         {
             return (0, Array.Empty<BlockEntropySample>());
+        }
+
+        if (fileLength > options.FullBlockScanMaxBytes && options.MaxBlockSamples == 5 && inspection.Windows.Count > 0)
+        {
+            var winBlocks = inspection.Windows
+                .Select(w => new BlockEntropySample
+                {
+                    Offset = w.Offset,
+                    Length = w.Length,
+                    EntropyBitsPerByte = w.EntropyBitsPerByte,
+                })
+                .ToList();
+            return (inspection.Signals.MeanEntropyBitsPerByte, winBlocks);
         }
 
         if (fileLength <= options.FullBlockScanMaxBytes)

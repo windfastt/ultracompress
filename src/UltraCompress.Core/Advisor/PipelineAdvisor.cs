@@ -1,9 +1,11 @@
+using UltraCompress.Core.Intelligence;
 using UltraCompress.Core.Safety;
 
 namespace UltraCompress.Core.Advisor;
 
 /// <summary>
-/// Strictly lossless pipeline and codec profile advisor governed by <see cref="ProfileContract"/> and <see cref="SafetyPolicy"/>.
+/// Content-intelligent lossless pipeline advisor backed by <see cref="ContentInspector"/>, <see cref="StrategySelector"/>,
+/// <see cref="ProfileContract"/>, and <see cref="SafetyPolicy"/>.
 /// Never emits lossy, format-converting, or data-removing preprocessors on any compression profile.
 /// </summary>
 public static class PipelineAdvisor
@@ -13,189 +15,325 @@ public static class PipelineAdvisor
 
     public static AdvisorPlan Plan(FileFingerprint fingerprint, CompressionProfile profile)
     {
+        ArgumentNullException.ThrowIfNull(fingerprint);
         var contract = ProfileContract.Get(profile);
         contract.ValidateContractInvariants();
-        var decisions = new List<AdvisorDecision>();
 
-        if (TryEntropyFastPath(fingerprint, profile, contract, decisions, out var fastPlan))
+        var inspection = ResolveInspection(fingerprint);
+        var report = StrategySelector.SelectForInspection(inspection, profile);
+        var decisions = BuildAuditDecisions(fingerprint, inspection, report, profile);
+
+        var primaryPreprocessStep = report.SelectedPipeline.ExecutableRecipe.Steps.OfType<PreprocessStep>().FirstOrDefault()
+            ?? new PreprocessStep { Name = "raw" };
+        var primaryCompressStep = report.SelectedPipeline.ExecutableRecipe.Steps.OfType<CompressStep>().Last();
+
+        var primaryCodec = new CodecProfileSuggestion
         {
-            return fastPlan;
-        }
+            Codec = primaryCompressStep.Codec,
+            Level = primaryCompressStep.Level,
+            DictSizeKb = primaryCompressStep.DictSizeKb,
+            MatchedRuleId = decisions.FirstOrDefault()?.RuleId ?? AdvisorRuleIds.ProfileDefault,
+        };
 
-        if (TryTinyFileFastPath(fingerprint, profile, decisions, out var tinyPlan))
+        int? stride = primaryPreprocessStep.Params.TryGetValue("stride", out var rawStride) && rawStride is int s
+            ? s
+            : null;
+
+        var primaryRecipe = BuildValidatedRecipe(
+            fingerprint,
+            profile,
+            primaryPreprocessStep.Name,
+            stride,
+            primaryCodec,
+            primaryCompressStep.Method,
+            primaryCompressStep.Solid);
+
+        var alternates = BuildAlternateCodecs(inspection, primaryCodec, profile, contract, primaryPreprocessStep.Name);
+        var candidates = BuildTournamentCandidates(fingerprint, profile, primaryPreprocessStep.Name, stride, alternates, decisions);
+
+        var finalizedReport = report with
         {
-            return tinyPlan;
-        }
-
-        var (preprocess, stride) = PickLosslessPreprocess(fingerprint, decisions);
-        var codec = SuggestPrimaryCodec(fingerprint, profile, decisions);
-        var recipe = BuildRecipe(fingerprint, profile, preprocess, stride, codec);
-
-        var alternates = BuildAlternateCodecs(fingerprint, profile, contract, preprocess);
-        var candidates = BuildTournamentCandidates(fingerprint, profile, preprocess, stride, alternates, decisions);
+            SelectedPipeline = report.SelectedPipeline with
+            {
+                ExecutableRecipe = primaryRecipe,
+            },
+        };
 
         return new AdvisorPlan
         {
-            PrimaryRecipe = recipe,
-            PrimaryCodec = codec,
+            PrimaryRecipe = primaryRecipe,
+            PrimaryCodec = primaryCodec,
             AlternateCodecs = alternates,
             TournamentCandidates = candidates,
             Decisions = decisions,
+            DecisionReport = finalizedReport,
         };
     }
+
+    public static StrategyDecisionReport ExplainPath(
+        string targetPath,
+        CompressionProfile profile = CompressionProfile.Balanced,
+        ContentInspectorOptions? options = null) =>
+        StrategySelector.AnalyzePath(targetPath, profile, options);
+
+    public static Task<StrategyDecisionReport> ExplainPathAsync(
+        string targetPath,
+        CompressionProfile profile = CompressionProfile.Balanced,
+        ContentInspectorOptions? options = null,
+        CancellationToken cancellationToken = default) =>
+        StrategySelector.AnalyzePathAsync(targetPath, profile, options, cancellationToken);
 
     public static PipelineRecipe SuggestPrimaryRecipe(FileFingerprint fingerprint, CompressionProfile profile) =>
         Plan(fingerprint, profile).PrimaryRecipe;
 
-    private static bool TryEntropyFastPath(
-        FileFingerprint fingerprint,
-        CompressionProfile profile,
-        ProfileContract contract,
-        List<AdvisorDecision> decisions,
-        out AdvisorPlan plan)
+    private static ContentInspectionResult ResolveInspection(FileFingerprint fingerprint)
     {
-        plan = null!;
-        var gate = Math.Min(HighEntropyGate, contract.IncompressibleEntropyBypassBitsPerByte);
-        if (fingerprint.EntropyBitsPerByte is not double entropy || entropy < gate)
+        if (fingerprint.Inspection is not null)
         {
-            return false;
+            return fingerprint.Inspection;
         }
 
-        decisions.Add(new AdvisorDecision(
-            AdvisorRuleIds.EntropyGate,
-            $"Entropy {entropy:F2} >= {gate:F2} bpb for profile {profile}; bypass heavy preprocessors and use fast lossless store/zstd."));
-
-        var codec = new CodecProfileSuggestion
+        if (!string.IsNullOrWhiteSpace(fingerprint.Path) && File.Exists(fingerprint.Path))
         {
-            Codec = profile == CompressionProfile.Instant ? "store" : "zstd",
-            Level = profile == CompressionProfile.Instant ? 0 : 1,
-            MatchedRuleId = AdvisorRuleIds.EntropyGate,
-        };
-        var recipe = BuildRecipe(fingerprint, profile, "raw", stride: null, codec);
-        plan = new AdvisorPlan
-        {
-            PrimaryRecipe = recipe,
-            PrimaryCodec = codec,
-            Decisions = decisions,
-        };
-        return true;
-    }
-
-    private static bool TryTinyFileFastPath(
-        FileFingerprint fingerprint,
-        CompressionProfile profile,
-        List<AdvisorDecision> decisions,
-        out AdvisorPlan plan)
-    {
-        plan = null!;
-        if (fingerprint.SizeBytes >= 4 * 1024)
-        {
-            return false;
+            return ContentInspector.InspectFile(fingerprint.Path);
         }
 
-        decisions.Add(new AdvisorDecision(
-            AdvisorRuleIds.TinyFileFast,
-            "File under 4 KiB; dictionary and multi-candidate tournament overhead skipped in favor of fast lossless zstd."));
-
-        var codec = new CodecProfileSuggestion
-        {
-            Codec = "zstd",
-            Level = profile == CompressionProfile.Instant ? 1 : 3,
-            MatchedRuleId = AdvisorRuleIds.TinyFileFast,
-        };
-        var recipe = BuildRecipe(fingerprint, profile, "raw", stride: null, codec);
-        plan = new AdvisorPlan
-        {
-            PrimaryRecipe = recipe,
-            PrimaryCodec = codec,
-            Decisions = decisions,
-        };
-        return true;
+        return SynthesizeInspectionFromFingerprint(fingerprint);
     }
 
-    private static (string Name, int? Stride) PickLosslessPreprocess(
-        FileFingerprint fingerprint,
-        List<AdvisorDecision> decisions)
+    private static ContentInspectionResult SynthesizeInspectionFromFingerprint(FileFingerprint fp)
     {
-        if (fingerprint.EntropyBitsPerByte is >= MediaEntropySkipReencode)
+        var ext = !string.IsNullOrWhiteSpace(fp.Extension)
+            ? fp.Extension.ToLowerInvariant()
+            : Path.GetExtension(fp.Path).ToLowerInvariant();
+        var mime = fp.DetectedType?.ToLowerInvariant() ?? string.Empty;
+        var entropy = fp.EntropyBitsPerByte ?? 5.0;
+
+        var (formatId, displayName, resolvedMime, contentClass, stride) = ResolveSyntheticFormat(ext, mime, entropy);
+        var probeRatio = EstimateMicroProbeRatioFromEntropy(entropy, contentClass);
+        var strideRed = contentClass is ContentClass.DatabaseAndTabular or ContentClass.UncompressedRasterImage or ContentClass.UncompressedAudio
+            && entropy < 7.7
+            ? 0.65
+            : 0.0;
+
+        return new ContentInspectionResult
+        {
+            Path = fp.Path,
+            SizeBytes = fp.SizeBytes,
+            SampledBytes = Math.Min(fp.SizeBytes, 320 * 1024),
+            PeakBufferBytes = (int)Math.Min(fp.SizeBytes, 320 * 1024),
+            InspectionDurationMs = 0.05,
+            Signature = new SignatureMatch
+            {
+                FormatId = formatId,
+                DisplayName = displayName,
+                MimeType = resolvedMime,
+                ContentClass = contentClass,
+                Confidence = 0.90,
+                MatchedEvidence = $"Synthesized from FileFingerprint ({resolvedMime}, {entropy:F2} bpb)",
+                StructuralStrideBytes = stride,
+                HasConsentGatedOptimizationCandidate = contentClass is ContentClass.CompressedVideo or ContentClass.CompressedImage or ContentClass.ExecutableBinary,
+            },
+            Windows = fp.BlockEntropies.Select((b, idx) => new InspectionWindowSample
+            {
+                Position = idx switch
+                {
+                    0 => WindowPosition.Head,
+                    1 => WindowPosition.Quarter25,
+                    2 => WindowPosition.Midpoint50,
+                    3 => WindowPosition.Quarter75,
+                    _ => WindowPosition.Tail,
+                },
+                Offset = b.Offset,
+                Length = b.Length,
+                EntropyBitsPerByte = b.EntropyBitsPerByte,
+                Stride4DeltaEntropy = Math.Max(0, b.EntropyBitsPerByte - strideRed),
+                Stride8DeltaEntropy = Math.Max(0, b.EntropyBitsPerByte - strideRed),
+            }).ToList(),
+            Signals = new ContentInspectionSignals
+            {
+                MeanEntropyBitsPerByte = entropy,
+                InteriorEntropyBitsPerByte = entropy,
+                MinWindowEntropy = entropy,
+                MaxWindowEntropy = entropy,
+                BigramConditionalEntropy = Math.Clamp(entropy * 0.85, 0.0, 8.0),
+                BigramPredictability = Math.Clamp(1.0 - (entropy / 8.0), 0.0, 1.0),
+                Stride4EntropyReduction = stride == 4 ? strideRed : strideRed * 0.5,
+                Stride8EntropyReduction = stride == 8 ? strideRed : strideRed * 0.5,
+                BestStrideBytes = strideRed > 0 ? (stride ?? 4) : 0,
+                BestStrideEntropyReduction = strideRed,
+                MicroProbeInputBytes = (int)Math.Min(fp.SizeBytes, 32 * 1024),
+                MicroProbeCompressedBytes = (int)Math.Round(Math.Min(fp.SizeBytes, 32 * 1024) * probeRatio),
+                MicroProbeRatio = probeRatio,
+                PreprocessedMicroProbeRatio = strideRed > 0 ? Math.Max(0.10, probeRatio * 0.72) : null,
+            },
+            SampleFingerprintSha256 = fp.ContentHashSha256 ?? new string('0', 64),
+            IsFullContentHash = fp.ContentHashSha256 is not null,
+        };
+    }
+
+    private static (string FormatId, string DisplayName, string Mime, ContentClass Class, int? Stride) ResolveSyntheticFormat(
+        string ext,
+        string mime,
+        double entropy)
+    {
+        if (mime.Contains("pdf") || ext == ".pdf")
+            return ("PDF", "Portable Document Format", "application/pdf", ContentClass.ContainerDocument, null);
+        if (mime.Contains("sqlite") || ext is ".sqlite" or ".db" or ".sqlite3")
+            return ("SQLite", "SQLite 3 Database", "application/x-sqlite3", ContentClass.DatabaseAndTabular, 4096);
+        if (mime.Contains("mp4") || ext == ".mp4")
+            return ("MP4", "MPEG-4 Video", "video/mp4", ContentClass.CompressedVideo, null);
+        if (mime.Contains("matroska") || ext == ".mkv")
+            return ("MKV", "Matroska Video", "video/x-matroska", ContentClass.CompressedVideo, null);
+        if (mime.Contains("quicktime") || ext == ".mov")
+            return ("MOV", "QuickTime Video", "video/quicktime", ContentClass.CompressedVideo, null);
+        if (mime.Contains("jpeg") || ext is ".jpg" or ".jpeg")
+            return ("JPEG", "JPEG Still Image", "image/jpeg", ContentClass.CompressedImage, null);
+        if (mime.Contains("heic") || ext is ".heic" or ".heif")
+            return ("HEIC", "HEIC Still Image", "image/heic", ContentClass.CompressedImage, null);
+        if (mime.Contains("png") || ext == ".png")
+            return ("PNG", "Portable Network Graphics", "image/png", ContentClass.CompressedImage, null);
+        if (mime.Contains("bmp") || ext == ".bmp")
+            return ("BMP", "Windows Bitmap", "image/bmp", ContentClass.UncompressedRasterImage, 4);
+        if (mime.Contains("dng") || ext == ".dng")
+            return ("DNG", "Adobe Digital Negative", "image/x-adobe-dng", ContentClass.UncompressedRasterImage, 2);
+        if (mime.Contains("tiff") || ext is ".tif" or ".tiff")
+            return ("TIFF", "TIFF Raster Image", "image/tiff", entropy >= 7.85 ? ContentClass.CompressedImage : ContentClass.UncompressedRasterImage, 4);
+        if (ext is ".raw" or ".cr2" or ".cr3" or ".nef" or ".arw")
+            return ("RAW", "Camera RAW Image", "image/x-raw", ContentClass.UncompressedRasterImage, 2);
+        if (mime.Contains("msdownload") || mime.Contains("x-dosexec") || mime.Contains("x-executable") || ext is ".exe" or ".dll")
+            return ("PE", "Windows PE/COFF Binary", "application/x-msdownload", ContentClass.ExecutableBinary, null);
+        if (mime.Contains("elf") || ext == ".so")
+            return ("ELF", "ELF Binary", "application/x-elf", ContentClass.ExecutableBinary, null);
+        if (ext == ".sql")
+            return ("SQL", "SQL Dump", "application/sql", ContentClass.DatabaseAndTabular, null);
+        if (ext == ".csv")
+            return ("CSV", "CSV Tabular Data", "text/csv", ContentClass.DatabaseAndTabular, 4);
+        if (ext == ".tsv")
+            return ("TSV", "TSV Tabular Data", "text/tab-separated-values", ContentClass.DatabaseAndTabular, 4);
+        if (ext is ".ndjson" or ".jsonl")
+            return ("NDJSON", "NDJSON Stream", "application/x-ndjson", ContentClass.DatabaseAndTabular, null);
+        if (mime.Contains("json") || ext == ".json")
+            return ("JSON", "JSON Document", "application/json", ContentClass.DatabaseAndTabular, null);
+        if (ext == ".parquet")
+            return ("Parquet", "Apache Parquet", "application/vnd.apache.parquet", ContentClass.DatabaseAndTabular, 8);
+        if (ext is ".cs" or ".ts" or ".js" or ".py" or ".rs" or ".go" or ".cpp" or ".c" or ".h" or ".java")
+            return ("SourceCode", "Source Code", "text/x-source-code", ContentClass.SourceAndText, null);
+        if (ext is ".txt" or ".md" or ".log" or ".xml" or ".html" or ".htm")
+            return ("UTF-8", "UTF-8 Text", "text/plain", ContentClass.SourceAndText, null);
+        if (ext is ".zip" or ".7z" or ".gz" or ".zst" or ".xz")
+            return ("ZIP", "Compressed Archive", "application/zip", ContentClass.CompressedArchive, null);
+
+        return ("Binary", "Generic Binary", string.IsNullOrEmpty(mime) ? "application/octet-stream" : mime, ContentClass.GenericBinary, null);
+    }
+
+    private static double EstimateMicroProbeRatioFromEntropy(double entropy, ContentClass contentClass)
+    {
+        if (entropy >= 7.85)
+        {
+            return 0.999;
+        }
+
+        if (contentClass is ContentClass.CompressedVideo or ContentClass.CompressedImage or ContentClass.CompressedAudio or ContentClass.CompressedArchive
+            && entropy >= 7.50)
+        {
+            return 0.996;
+        }
+
+        return Math.Clamp(entropy / 8.0, 0.10, 0.999);
+    }
+
+    private static List<AdvisorDecision> BuildAuditDecisions(
+        FileFingerprint fingerprint,
+        ContentInspectionResult inspection,
+        StrategyDecisionReport report,
+        CompressionProfile profile)
+    {
+        var decisions = new List<AdvisorDecision>();
+
+        if (report.SelectedPipeline.StrategyId == "tiny-file-fast-zstd")
+        {
+            decisions.Add(new AdvisorDecision(
+                AdvisorRuleIds.TinyFileFast,
+                report.SelectedPipeline.RationaleSummary));
+            return decisions;
+        }
+
+        if (fingerprint.EntropyBitsPerByte is >= MediaEntropySkipReencode
+            && inspection.Signature.ContentClass is ContentClass.CompressedImage or ContentClass.CompressedAudio)
         {
             decisions.Add(new AdvisorDecision(
                 AdvisorRuleIds.EntropySkipReencode,
-                $"Entropy {fingerprint.EntropyBitsPerByte:F2} >= {MediaEntropySkipReencode}; skip structural preprocessors."));
-            return ("raw", null);
+                $"Entropy {fingerprint.EntropyBitsPerByte:F2} >= {MediaEntropySkipReencode}; skip structural preprocessors and route to lossless bypass."));
         }
 
-        var ext = NormalizeExtension(fingerprint);
-        var selected = ext switch
+        if (report.SelectedPipeline.PrimaryCodec == "store")
         {
-            ".exe" or ".dll" or ".so" or ".elf" => (AdvisorRuleIds.ExtensionPe, "x86_bcj", (int?)null),
-            ".sqlite" or ".db" or ".parquet" => (AdvisorRuleIds.ExtensionSqlite, "byteshuffle", (int?)8),
-            ".csv" or ".tsv" or ".bin" when ext is ".csv" or ".tsv" => (AdvisorRuleIds.ExtensionLogCsv, "byteshuffle", (int?)4),
-            ".bmp" or ".tiff" or ".tif" or ".wav" or ".raw" => (AdvisorRuleIds.ExtensionPng, "delta", (int?)4),
-            _ => (AdvisorRuleIds.ProfileDefault, "raw", (int?)null),
-        };
-
-        if (selected.Item1 != AdvisorRuleIds.ProfileDefault)
-        {
-            decisions.Add(new AdvisorDecision(selected.Item1, $"Extension {ext} → reversible lossless preprocess `{selected.Item2}`."));
-        }
-
-        return (selected.Item2, selected.Item3);
-    }
-
-    private static CodecProfileSuggestion SuggestPrimaryCodec(
-        FileFingerprint fingerprint,
-        CompressionProfile profile,
-        List<AdvisorDecision> decisions)
-    {
-        var baseRecipe = ProfileDefaults.CreateDefaultRecipe(profile);
-        var step = baseRecipe.Steps.OfType<CompressStep>().Last();
-        int? dict = step.DictSizeKb;
-
-        if (profile is CompressionProfile.Tiny or CompressionProfile.Laboratory
-            && fingerprint.SizeClass is "medium" or "large"
-            && step.Codec == "zstd")
-        {
-            dict ??= fingerprint.SizeBytes switch
+            if (inspection.Signature.ContentClass == ContentClass.CompressedVideo)
             {
-                < 10 * 1024 * 1024 => 4096,
-                _ => 16384,
-            };
+                decisions.Add(new AdvisorDecision(
+                    AdvisorRuleIds.MediaStreamBypass,
+                    report.SelectedPipeline.RationaleSummary));
+            }
+
+            decisions.Add(new AdvisorDecision(
+                AdvisorRuleIds.EntropyGate,
+                report.SelectedPipeline.RationaleSummary));
+            return decisions;
         }
 
-        if (fingerprint.SizeClass == "large" && step.Level >= 19)
+        switch (inspection.Signature.ContentClass)
         {
-            decisions.Add(new AdvisorDecision(
-                AdvisorRuleIds.ProfileDefault,
-                "Large file with high zstd level; cap dictionary within profile memory budget."));
-            dict = dict is null or > 8192 ? 8192 : dict;
+            case ContentClass.DatabaseAndTabular:
+                if (inspection.Signature.FormatId == "SQLite")
+                {
+                    decisions.Add(new AdvisorDecision(AdvisorRuleIds.ExtensionSqlite, report.SelectedPipeline.RationaleSummary));
+                }
+                else if (inspection.Signature.FormatId is "CSV" or "TSV")
+                {
+                    decisions.Add(new AdvisorDecision(AdvisorRuleIds.ExtensionLogCsv, report.SelectedPipeline.RationaleSummary));
+                }
+
+                decisions.Add(new AdvisorDecision(AdvisorRuleIds.StrideByteShuffleDelta, report.SelectedPipeline.RationaleSummary));
+                break;
+
+            case ContentClass.ExecutableBinary:
+                decisions.Add(new AdvisorDecision(AdvisorRuleIds.ExtensionPe, report.SelectedPipeline.RationaleSummary));
+                decisions.Add(new AdvisorDecision(AdvisorRuleIds.BinaryBcjFilter, report.SelectedPipeline.RationaleSummary));
+                break;
+
+            case ContentClass.UncompressedRasterImage:
+            case ContentClass.UncompressedAudio:
+                decisions.Add(new AdvisorDecision(AdvisorRuleIds.ExtensionPng, report.SelectedPipeline.RationaleSummary));
+                break;
+
+            case ContentClass.SourceAndText:
+                decisions.Add(new AdvisorDecision(AdvisorRuleIds.SolidSourceDictionary, report.SelectedPipeline.RationaleSummary));
+                break;
         }
 
         decisions.Add(new AdvisorDecision(
             AdvisorRuleIds.ProfileDefault,
-            $"Profile {profile} → {step.Codec} level {step.Level}."));
+            $"Profile {profile} -> {report.SelectedPipeline.PrimaryCodec} level {report.SelectedPipeline.CodecLevel}."));
 
-        return new CodecProfileSuggestion
-        {
-            Codec = step.Codec,
-            Level = step.Level,
-            DictSizeKb = dict,
-            MatchedRuleId = AdvisorRuleIds.ProfileDefault,
-        };
+        return decisions;
     }
 
     private static IReadOnlyList<CodecProfileSuggestion> BuildAlternateCodecs(
-        FileFingerprint fingerprint,
+        ContentInspectionResult inspection,
+        CodecProfileSuggestion primary,
         CompressionProfile profile,
         ProfileContract contract,
         string preprocess)
     {
-        if (profile is CompressionProfile.Instant or CompressionProfile.Balanced)
+        if (profile is CompressionProfile.Instant or CompressionProfile.Balanced
+            || primary.Codec == "store"
+            || inspection.SizeBytes < 4 * 1024)
         {
             return Array.Empty<CodecProfileSuggestion>();
         }
 
-        if (fingerprint.EntropyBitsPerByte is double e && e >= contract.IncompressibleEntropyBypassBitsPerByte)
+        if (inspection.Signals.InteriorEntropyBitsPerByte >= contract.IncompressibleEntropyBypassBitsPerByte)
         {
             return Array.Empty<CodecProfileSuggestion>();
         }
@@ -253,21 +391,25 @@ public static class PipelineAdvisor
         var candidates = new List<PipelineRecipe>(codecs.Count);
         foreach (var alt in codecs)
         {
-            candidates.Add(BuildRecipe(fingerprint, profile, primaryPreprocess, stride, alt, $"candidate-{candidates.Count + 1}"));
+            var method = alt.Codec == "7z" ? "LZMA2" : null;
+            var solid = alt.Codec == "7z" ? false : (bool?)null;
+            candidates.Add(BuildValidatedRecipe(fingerprint, profile, primaryPreprocess, stride, alt, method, solid, $"candidate-{candidates.Count + 1}"));
         }
 
         return candidates;
     }
 
-    private static PipelineRecipe BuildRecipe(
+    private static PipelineRecipe BuildValidatedRecipe(
         FileFingerprint fingerprint,
         CompressionProfile profile,
         string preprocess,
         int? stride,
         CodecProfileSuggestion codec,
+        string? method = null,
+        bool? solid = null,
         string? recipeSuffix = null)
     {
-        var ext = NormalizeExtension(fingerprint).TrimStart('.');
+        var ext = Path.GetExtension(fingerprint.Path).ToLowerInvariant().TrimStart('.');
         if (string.IsNullOrEmpty(ext))
         {
             ext = "bin";
@@ -288,14 +430,14 @@ public static class PipelineAdvisor
             Codec = codec.Codec,
             Level = codec.Level,
             DictSizeKb = codec.DictSizeKb,
-            Method = codec.Codec == "7z" ? "LZMA2" : null,
-            Solid = codec.Codec == "7z" ? false : null,
+            Method = codec.Codec == "7z" ? (method ?? "LZMA2") : method,
+            Solid = codec.Codec == "7z" ? (solid ?? false) : solid,
             Threads = codec.Codec == "7z" ? 0 : null,
         };
 
         var recipe = new PipelineRecipe
         {
-            Id = id,
+            Id = id.Length <= 128 ? id : id[..128],
             Profile = profile,
             Verify = new VerifyOptions { DecompressRoundtrip = true, HashOriginal = true },
             Steps = [preprocessStep, compressStep],
@@ -303,29 +445,5 @@ public static class PipelineAdvisor
 
         SafetyPolicy.ValidateCompressionProfileRecipe(profile, recipe);
         return recipe;
-    }
-
-    private static string NormalizeExtension(FileFingerprint fingerprint)
-    {
-        if (!string.IsNullOrWhiteSpace(fingerprint.DetectedType))
-        {
-            var mime = fingerprint.DetectedType.ToLowerInvariant();
-            if (mime.Contains("pdf", StringComparison.Ordinal))
-            {
-                return ".pdf";
-            }
-
-            if (mime.Contains("sqlite", StringComparison.Ordinal))
-            {
-                return ".sqlite";
-            }
-
-            if (mime.Contains("x-dosexec", StringComparison.Ordinal) || mime.Contains("x-executable", StringComparison.Ordinal))
-            {
-                return ".exe";
-            }
-        }
-
-        return Path.GetExtension(fingerprint.Path).ToLowerInvariant();
     }
 }
