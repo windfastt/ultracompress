@@ -1,0 +1,30 @@
+<Project Sdk="WixToolset.Sdk/5.0.0">
+
+  <PropertyGroup>
+    <OutputName>UltraCompress</OutputName>
+    <OutputType>Package</OutputType>
+    <DefineConstants>
+      ProductVersion=0.1.0.0;
+      ProductName=UltraCompress;
+      Manufacturer=UltraCompress;
+    </DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.0" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\UltraCompress.Engine\UltraCompress.Engine.csproj"
+                        Publish="true"
+                        Properties="RuntimeIdentifier=win-x64;SelfContained=true;PublishSingleFile=true" />
+    <ProjectReference Include="..\..\..\src\UltraCompress.Tray\UltraCompress.Tray.csproj"
+                        Publish="true"
+                        Properties="RuntimeIdentifier=win-x64;SelfContained=true;PublishSingleFile=true;EnableWindowsTargeting=true" />
+    <ProjectReference Include="..\..\..\src\UltraCompress.Worker\UltraCompress.Worker.csproj"
+                        Publish="true"
+                        Properties="RuntimeIdentifier=win-x64;SelfContained=true;PublishSingleFile=true" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,17 @@
+<Project Sdk="WixToolset.Sdk/5.0.0">
+
+  <PropertyGroup>
+    <OutputName>UltraCompress-Setup</OutputName>
+    <OutputType>Bundle</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.BootstrapperApplications.wixext" Version="5.0.0" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\UltraCompress.Package\UltraCompress.Package.wixproj" />
+  </ItemGroup>
+
+</Project>

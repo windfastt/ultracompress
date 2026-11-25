@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?define UpgradeCode = "E7F8A9B0-1C2D-4E5F-9A8B-7C6D5E4F3A2B" ?>
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Package Name="$(var.ProductName)"
+           Manufacturer="$(var.Manufacturer)"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="$(var.UpgradeCode)"
+           Compressed="yes"
+           Scope="perMachine">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+
+    <Media Id="1" Cabinet="ultracompress.cab" EmbedCab="yes" />
+
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/windfastt/ultracompress" />
+
+    <WixVariable Id="WixUILicenseRtf" Value="..\assets\License.rtf" />
+    <ui:WixUI Id="WixUI_Minimal" />
+
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLROOT" Name="UltraCompress">
+        <Directory Id="EngineFolder" Name="Engine" />
+        <Directory Id="TrayFolder" Name="Tray" />
+        <Directory Id="WorkerFolder" Name="Worker" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ApplicationProgramsFolder" Name="UltraCompress" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder" />
+
+    <!-- VC++ prerequisite: RegistrySearch lives on Bundle.wxs (WiX v4 Package cannot host util:RegistrySearch). -->
+
+    <Feature Id="MainFeature" Title="UltraCompress" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents">
+
+      <Component Id="EngineServiceComponent" Directory="EngineFolder" Guid="A1B2C3D4-E5F6-4A5B-8C9D-0E1F2A3B4C5D">
+        <File Id="EngineExe"
+              Name="UltraCompress.Engine.exe"
+              Source="$(var.UltraCompress.Engine.TargetPath)"
+              KeyPath="yes" />
+        <ServiceInstall Id="EngineServiceInstall"
+                        Type="ownProcess"
+                        Name="UltraCompressEngine"
+                        DisplayName="UltraCompress Engine"
+                        Description="UltraCompress background compression engine."
+                        Start="auto"
+                        ErrorControl="normal"
+                        Vital="yes" />
+        <ServiceControl Id="EngineServiceControl"
+                        Name="UltraCompressEngine"
+                        Start="install"
+                        Stop="both"
+                        Remove="uninstall"
+                        Wait="yes" />
+      </Component>
+
+      <Component Id="TrayComponent" Directory="TrayFolder" Guid="B2C3D4E5-F6A7-4B5C-9D0E-1F2A3B4C5D6E">
+        <File Id="TrayExe"
+              Name="UltraCompress.Tray.exe"
+              Source="$(var.UltraCompress.Tray.TargetPath)"
+              KeyPath="yes" />
+      </Component>
+
+      <Component Id="TrayShortcutsComponent" Directory="TrayFolder" Guid="E5F6A7B8-C9D0-4E1F-A2B3-C4D5E6F70819">
+        <RegistryValue Root="HKCU"
+                       Key="Software\UltraCompress"
+                       Name="TrayShortcuts"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+        <Shortcut Id="TrayStartMenuShortcut"
+                  Directory="ApplicationProgramsFolder"
+                  Name="UltraCompress Tray"
+                  Description="UltraCompress system tray."
+                  Target="[TrayFolder]UltraCompress.Tray.exe"
+                  WorkingDirectory="TrayFolder" />
+        <Shortcut Id="TrayDesktopShortcut"
+                  Directory="DesktopFolder"
+                  Name="UltraCompress Tray"
+                  Description="UltraCompress system tray."
+                  Target="[TrayFolder]UltraCompress.Tray.exe"
+                  WorkingDirectory="TrayFolder" />
+        <RemoveFolder Id="RemoveApplicationProgramsFolder" Directory="ApplicationProgramsFolder" On="uninstall" />
+      </Component>
+
+      <Component Id="WorkerComponent" Directory="WorkerFolder" Guid="C3D4E5F6-A7B8-4C5D-9E0F-1A2B3C4D5E6F">
+        <File Id="WorkerExe"
+              Name="UltraCompress.Worker.exe"
+              Source="$(var.UltraCompress.Worker.TargetPath)"
+              KeyPath="yes" />
+      </Component>
+
+      <Component Id="NoticesComponent" Directory="INSTALLROOT" Guid="D4E5F6A7-B8C9-4D5E-9F0A-1B2C3D4E5F6A">
+        <File Id="ThirdPartyNotices"
+              Name="THIRD_PARTY_NOTICES.txt"
+              Source="..\assets\THIRD_PARTY_NOTICES.txt"
+              KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

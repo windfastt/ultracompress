@@ -1,0 +1,6 @@
+<Project>
+  <!-- WiX publish pulls Engine/Tray/Worker in parallel; all depend on Core (CS2012 file lock on Windows CI). -->
+  <PropertyGroup>
+    <BuildProjectReferencesInParallel>false</BuildProjectReferencesInParallel>
+  </PropertyGroup>
+</Project>

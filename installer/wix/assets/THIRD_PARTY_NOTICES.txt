@@ -1,0 +1,54 @@
+UltraCompress — Third-Party Notices
+===================================
+
+This installer may include components governed by licenses other than the
+UltraCompress application license. The following notices are provided for
+compliance with those licenses.
+
+-----------------------------------------------------------------------------
+Zstandard (zstd) — Facebook / Meta
+-----------------------------------------------------------------------------
+The compression stack may invoke Zstandard (zstd). zstd is dual-licensed under
+the BSD License and the GNU General Public License v2 (LGPL applies when
+linking zstd as a shared library).
+
+Source: https://github.com/facebook/zstd
+License (BSD): https://github.com/facebook/zstd/blob/dev/LICENSE
+License (GPLv2): https://github.com/facebook/zstd/blob/dev/COPYING
+
+UltraCompress distributes ZstdSharp.Port (MIT), a managed wrapper. The native
+zstd library embedded or loaded at runtime remains subject to the zstd license
+terms above. If you modify and redistribute zstd as part of this product, LGPL
+obligations may apply — consult legal counsel.
+
+-----------------------------------------------------------------------------
+ZstdSharp.Port — MIT
+-----------------------------------------------------------------------------
+https://www.nuget.org/packages/ZstdSharp.Port
+
+-----------------------------------------------------------------------------
+System.CommandLine — MIT
+-----------------------------------------------------------------------------
+https://github.com/dotnet/command-line-api
+
+-----------------------------------------------------------------------------
+WiX Toolset — MS-RL
+-----------------------------------------------------------------------------
+Installer authoring uses the WiX Toolset (wixtoolset.org). The WiX source in
+this repository is your own; the WiX build tools are subject to the WiX license.
+
+-----------------------------------------------------------------------------
+Microsoft .NET
+-----------------------------------------------------------------------------
+Published binaries target .NET 8. Third-party notices for the .NET runtime and
+libraries are available from Microsoft:
+https://aka.ms/net-deployment-third-party-notices
+
+-----------------------------------------------------------------------------
+Visual C++ Runtime (prerequisite)
+-----------------------------------------------------------------------------
+Self-contained publishes may include or require the Microsoft Visual C++
+Redistributable. See:
+https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist
+
+Last updated: 2026-11-24

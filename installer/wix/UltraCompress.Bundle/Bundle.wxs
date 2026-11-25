@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Bundle Name="UltraCompress"
+          Manufacturer="UltraCompress"
+          Version="0.1.0.0"
+          UpgradeCode="F1E2D3C4-B5A6-7890-1234-567890ABCDEF">
+
+    <BootstrapperApplication>
+      <bal:WixStandardBootstrapperApplication Theme="none"
+                                              ShowVersion="yes" />
+    </BootstrapperApplication>
+
+    <util:RegistrySearch Id="VcRedistBundleSearch"
+                         Root="HKLM"
+                         Key="SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\AMD64"
+                         Value="Installed"
+                         Variable="VCRedistInstalled"
+                         Result="value" />
+
+    <!-- Phase 2: chain Microsoft.VCRedist.2015+.x64 ExePackage when redistributable is bundled (see blueprint §6). -->
+    <Chain>
+      <MsiPackage Id="UltraCompressMsi"
+                  SourceFile="$(var.UltraCompress.Package.TargetPath)"
+                  Vital="yes"
+                  Compressed="yes" />
+    </Chain>
+  </Bundle>
+</Wix>
