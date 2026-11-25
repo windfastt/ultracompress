@@ -29,6 +29,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltraCompress.ArchiveEngine
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltraCompress.Intelligence.Tests", "..\tests\UltraCompress.Intelligence.Tests\UltraCompress.Intelligence.Tests.csproj", "{0AFD2243-58AC-49E9-B999-6A4844B1974E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltraCompress.Desktop.Presentation", "UltraCompress.Desktop.Presentation\UltraCompress.Desktop.Presentation.csproj", "{4CE5A565-FC84-4906-80FE-66C2DD04FE65}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltraCompress.Desktop.Tests", "..\tests\UltraCompress.Desktop.Tests\UltraCompress.Desktop.Tests.csproj", "{76685508-5F08-4A30-A195-97DB97F80900}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -90,5 +94,13 @@ Global
 		{0AFD2243-58AC-49E9-B999-6A4844B1974E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0AFD2243-58AC-49E9-B999-6A4844B1974E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0AFD2243-58AC-49E9-B999-6A4844B1974E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4CE5A565-FC84-4906-80FE-66C2DD04FE65}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CE5A565-FC84-4906-80FE-66C2DD04FE65}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CE5A565-FC84-4906-80FE-66C2DD04FE65}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4CE5A565-FC84-4906-80FE-66C2DD04FE65}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76685508-5F08-4A30-A195-97DB97F80900}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76685508-5F08-4A30-A195-97DB97F80900}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76685508-5F08-4A30-A195-97DB97F80900}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76685508-5F08-4A30-A195-97DB97F80900}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

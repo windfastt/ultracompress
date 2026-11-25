@@ -43,7 +43,16 @@ public partial class App : Application
 
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
-        _mainWindow = new MainWindow();
-        _mainWindow.Activate();
+        var cmdArgs = Environment.GetCommandLineArgs();
+        var startInTrayOnly = cmdArgs.Any(a =>
+            string.Equals(a, "--tray", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(a, "--minimized", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(a, "--background", StringComparison.OrdinalIgnoreCase));
+
+        _mainWindow = new MainWindow(startInTrayOnly);
+        if (!startInTrayOnly)
+        {
+            _mainWindow.Activate();
+        }
     }
 }
