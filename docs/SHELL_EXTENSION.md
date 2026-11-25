@@ -1,39 +1,40 @@
-# Explorer shell extension (Phase 4 stub)
+# Windows Explorer Context-Menu Integration
 
-UltraCompress adds **UltraCompress here…** to the Windows 11 File Explorer context menu for files and folders. Phase 4 in the roadmap delivers the full native handler; this repo currently ships the **managed enqueue stub** and **sparse package manifest template**.
+UltraCompress integrates with Windows 10/11 File Explorer so users can right-click files or folders and enqueue compression jobs directly into `UltraCompress.Engine` without blocking the Explorer shell process.
 
 ## Architecture
 
 ```text
-Explorer  →  IExplorerCommand (native DLL, TODO)
-         →  ShellEnqueueClient  →  %ProgramData%\UltraCompress\queue\inbox.jsonl
-         →  UltraCompress.Engine (future: tail inbox and schedule jobs)
+Windows Explorer  →  IExplorerCommand (Sparse MSIX Identity)
+                  →  ShellEnqueueClient
+                  →  \\.\pipe\UltraCompress.Engine (fallback: %ProgramData%\UltraCompress\queue\inbox.jsonl)
+                  →  UltraCompress.Engine Scheduler & Worker Processes
 ```
 
-The native DLL must only enqueue paths and a profile. Compression runs in worker processes under the engine service.
+Shell handlers perform zero in-process compression inside `explorer.exe`; they strictly validate paths, attach the selected lossless `CompressionProfile`, and hand off execution to the background engine.
 
-## Sparse package
+## Sparse Package Registration
 
-Files live under `src/UltraCompress.Shell/sparse-package/AppxManifest.xml`. Install layout (planned WiX custom action):
+The sparse package manifest lives at `src/UltraCompress.Shell/sparse-package/AppxManifest.xml`. During signed production installation:
 
 ```powershell
 Add-AppxPackage -Path UltraCompress.Shell.msix -ExternalLocation "C:\Program Files\UltraCompress\Shell"
 ```
 
-Publisher in the manifest is a placeholder (`CN=UltraCompress`). Production installs must match the **Authenticode** subject on the signed package.
+Windows 11 requires sparse packages to be signed with a trusted Authenticode certificate whose subject matches `Identity/@Publisher` in `AppxManifest.xml`. See [OPERATOR_SIGNING.md](./OPERATOR_SIGNING.md) for the release signing checklist.
 
-## Dev test without Explorer
+## Programmatic & Integration Testing
+
+`ShellEnqueueClient` and `ShellExtensionStub` allow deterministic automated testing on CI without interactive Explorer shell sessions:
 
 ```csharp
 await ShellExtensionStub.InvokeExplorerCommandAsync(
-    new[] { @"C:\temp\sample.bin" },
-    CompressionProfile.Small,
+    new[] { @"C:\Workloads\dataset.sql" },
+    CompressionProfile.Balanced,
     queueDirectory: @"C:\temp\uc-queue-test");
 ```
 
-Each invocation appends one JSON line to `inbox.jsonl` in the queue directory.
-
 ## Related
 
-- [OPERATOR_SIGNING.md](./OPERATOR_SIGNING.md) — certificates required before registering the sparse package
-- Blueprint §5.3 and internal windows-integration research (sparse package + `IExplorerCommand`)
+- [OPERATOR_SIGNING.md](./OPERATOR_SIGNING.md) — Authenticode signing requirements for sparse MSIX registration
+- [USER.md](./USER.md) — Desktop, CLI, and Explorer usage guide

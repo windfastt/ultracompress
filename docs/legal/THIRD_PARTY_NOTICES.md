@@ -8,7 +8,7 @@ UltraCompress links to or subprocess-invokes the components below. Full license 
 - **Use:** LZMA2 / 7z archive compress and decompress via isolated worker subprocess
 - **License:** GNU Lesser General Public License v2.1 or later
 - **Attribution:** `tools/7z/LICENSE-7zip.txt`, link to https://www.7-zip.org/
-- **Source offer:** documented in `LICENSE-7zip.txt` and product Legal UI (Phase 2)
+- **Source offer:** documented in `LICENSE-7zip.txt` and surfaced in Desktop **Settings → Legal**
 
 ## Zstandard (BSD)
 

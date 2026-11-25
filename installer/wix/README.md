@@ -10,7 +10,7 @@ Produces:
 ## Layout
 
 - `Engine\UltraCompress.Engine.exe` — Windows service `UltraCompressEngine` (auto-start)
-- `Tray\UltraCompress.Tray.exe` — Start Menu + desktop shortcuts (Phase 2 stub)
+- `Tray\UltraCompress.Tray.exe` — WinUI 3 Desktop Archive Manager & Tray shortcuts (Start Menu + Desktop)
 - `Worker\UltraCompress.Worker.exe` — CLI worker
 - `THIRD_PARTY_NOTICES.txt` — LGPL / third-party attribution (includes Zstandard)
 

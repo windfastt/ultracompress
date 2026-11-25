@@ -1,72 +1,31 @@
-# Implementation checklist
+# Implementation & Verification Checklist
 
-Track delivery against `main`. Update checkboxes when work lands in merged PRs.
+Tracks architectural capabilities across `main` and the `v1.0.0` release train.
 
-## Phase 0 — Planning
+## Core Engine & Codec Backends
 
-- [x] North star and profiles defined
-- [x] Architecture diagram and process split
-- [x] Pipeline DSL sketched
-- [x] Compression backend matrix validated
-- [x] Windows service + tray patterns validated
-- [ ] Open decisions in blueprint §11 finalized in public docs
-- [x] GitHub repository published (`windfastt/ultracompress`)
+- [x] `UltraCompress.Core` — `FileFingerprint`, `PipelineRecipe`, JSON Schema validation
+- [x] Multi-window O(1) `ContentInspector` + explainable `StrategyDecisionReport`
+- [x] Five 100% bit-exact lossless `ProfileContract` SLAs (`Instant`, `Balanced`, `Archive`, `Tiny`, `Laboratory`)
+- [x] Strict four-mode `OperationKind` boundary (`LosslessCompression`, `LossyOptimization`, `FormatConversion`, `DataRemoval`)
+- [x] Reversible lossless preprocessors (`FastStreamBypass`, `DeltaTransform`, `ByteShuffleTransform`, `X86BcjTransform`)
+- [x] Verified codec backends: `ZstdSharp` (`zstd`), isolated `7za` (`LZMA2`), `.NET Brotli`, and `LibDeflate`
+- [x] `.ucx` multi-file indexed archive container with SHA-256 deduplication and selective extraction
+- [x] SQLite `recipes.db` store + UCB1 multi-candidate chunk tournament coordinator
 
-## Phase 1 — Core engine
+## Windows Service, Desktop Manager & Fleet
 
-- [x] `UltraCompress.Core` — `FileFingerprint`, `PipelineRecipe`, validation
-- [x] Recipe JSON schema + unit tests
-- [x] Worker host: child process, timeout, job runner
-- [x] Adapters: zstd compress/decompress roundtrip
-- [ ] Adapters: 7z single-file archive output (feat branch)
-- [x] CLI: worker `compress` with profiles
-- [ ] Golden-file tests (3 corpora: text, binary, mixed) on CI
+- [x] `UltraCompress.Engine` Windows Service + named-pipe IPC (`\\.\pipe\UltraCompress.Engine`) + localhost gRPC (`17832`)
+- [x] Distributed LAN worker gRPC fleet (`WorkerService` on `17833` with token auth and lease reaper)
+- [x] SQLite `jobs.db` persistent queue journal, atomic `.part` staging, and automatic crash recovery
+- [x] WinUI 3 Desktop Archive Manager + Tray (`UltraCompress.Tray`): drag-and-drop, `.ucx` browser, selective extract, history, destination manager, and consent-gated Optimization Studio
+- [x] Explorer context-menu enqueue integration (`UltraCompress.Shell` + sparse MSIX manifest)
+- [x] WiX installer package & bundle (`UltraCompress.msi` + `UltraCompress-Setup.exe`)
 
-## Phase 2 — Windows service + tray
+## CI, Benchmarks & Documentation
 
-- [x] `UltraCompress.Engine` Windows Service
-- [x] Named pipe localhost API
-- [x] `UltraCompress.Tray` single-instance + notify icon
-- [x] Queue UI: add, pause, cancel, profile picker
-- [ ] Taskbar progress integration
-- [x] Serilog rolling logs under ProgramData
-
-## Phase 3 — Analysis + search
-
-- [ ] Probe: size, hashes, entropy, extension
-- [ ] Magic / content type detection
-- [ ] Advisor ruleset v1 (extension + entropy gates)
-- [ ] SQLite recipe store + migrations
-- [ ] Tournament mode (N candidates, time budget)
-- [ ] Bandit search (Laboratory flag)
-- [ ] “Pin recipe” from tray UI
-
-## Phase 4 — Integrations
-
-- [ ] Explorer shell context menu
-- [ ] gRPC worker registration (LAN token file)
-- [ ] Remote worker sample client
-- [ ] Block-split job for huge files (optional)
-
-## Phase 5 — Installer + experimental
-
-- [ ] WiX: service, tray autostart, firewall rules (if distributed)
-- [ ] VC++ redist bootstrapper
-- [ ] Plugin SDK sample plugin
-- [ ] Experimental profile gate + crash telemetry opt-in
-- [ ] PAQ / external codec subprocess bridge (optional download)
-
-## CI / quality
-
-- [x] GitHub Actions: build, test on `windows-latest`
-- [x] Benchmark smoke project (`tests/UltraCompress.Benchmarks`)
-- [ ] GitHub Actions: artifact MSI
-- [ ] Code signing workflow (manual secret)
-- [ ] Dependabot for .NET
-
-## Documentation
-
-- [x] User: profiles and risk tiers (`docs/USER.md`)
-- [x] Product marketing site (`docs/site/` → GitHub Pages)
-- [ ] Dev: writing preprocessors and plugins
-- [ ] Operator: distributed workers
+- [x] GitHub Actions `windows-latest` build, unit test, and golden corpus backend round-trip verification
+- [x] Reproducible 6-category competitor benchmark suite (`7-Zip`, `Zstandard`, `Brotli`, `GZip`/`LibDeflate`)
+- [x] Profiles & Four-Mode Data Safety specification (`docs/profiles-and-safety.md`)
+- [x] Interactive SaaS/Desktop product site & Benchmark Explorer (`docs/site/` → GitHub Pages)
+- [ ] Operator EV Authenticode signing secret wired for production release tag (`docs/OPERATOR_SIGNING.md`)
