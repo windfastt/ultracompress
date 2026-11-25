@@ -25,6 +25,10 @@ dotnet run --project src/UltraCompress.Worker -- compress --input "C:\Files\repo
 
 Phase 2 adds the system tray (WinUI 3) and the `UltraCompressEngine` Windows Service for background queues. This repo currently ships the **worker CLI** and architectural stubs only.
 
+## Explorer integration (stub)
+
+Phase 4 adds **UltraCompress here…** in File Explorer. The managed stub writes queue requests to `%ProgramData%\UltraCompress\queue\inbox.jsonl`. Registering the context menu on your PC requires signing the sparse package — see [OPERATOR_SIGNING.md](./OPERATOR_SIGNING.md) and [SHELL_EXTENSION.md](./SHELL_EXTENSION.md).
+
 ## Safety
 
 Experimental tier should only be used after accepting instability. Workers run out-of-process so codec failures do not tear down the tray or engine.

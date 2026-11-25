@@ -29,6 +29,8 @@ Profiles: `Balanced`, `Small`, `Tiny`, `Laboratory`, `Experimental` — see [doc
 
 `UltraCompress.Engine` — Windows service with **gRPC** on `localhost:17832` (HTTP/2) and **named-pipe** IPC for the tray. See `src/UltraCompress.Engine/Protos/engine_v1.proto`.
 
+`UltraCompress.Shell` — Explorer context-menu enqueue stub (sparse MSIX manifest); see [docs/SHELL_EXTENSION.md](docs/SHELL_EXTENSION.md).
+
 ## Release
 Tag `v0.3.1` triggers draft [release.yml](.github/workflows/release.yml).
 
