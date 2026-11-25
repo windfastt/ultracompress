@@ -1,17 +1,26 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace UltraCompress.Core.Ipc;
 
 /// <summary>Newline-delimited JSON over a bidirectional stream (one object per line).</summary>
 public static class EngineJsonProtocol
 {
-    public static readonly JsonSerializerOptions SerializerOptions = new()
+    public static readonly JsonSerializerOptions SerializerOptions = CreateOptions();
+
+    private static JsonSerializerOptions CreateOptions()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        WriteIndented = false,
-    };
+        var opts = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true,
+            WriteIndented = false,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        };
+        opts.Converters.Add(new JsonStringEnumConverter());
+        return opts;
+    }
 
     public static async Task WriteRequestAsync(Stream stream, EngineRequest request, CancellationToken cancellationToken)
     {

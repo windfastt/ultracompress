@@ -8,6 +8,8 @@ public static class EnginePaths
 
     public const string WorkerTokenFileName = "worker.token";
 
+    public const string JobsDatabaseFileName = "jobs.db";
+
     /// <summary>
     /// Machine-wide data root on Windows (<c>%ProgramData%\UltraCompress</c>).
     /// The worker token file lives here so the Engine service and tray can read it without a per-user profile.
@@ -68,5 +70,33 @@ public static class EnginePaths
         }
 
         return Path.Combine(GetProgramDataRoot(), WorkerTokenFileName);
+    }
+
+    public static string GetDataDirectory()
+    {
+        var overrideDir = Environment.GetEnvironmentVariable("ULTRACOMPRESS_DATA_DIR");
+        if (!string.IsNullOrWhiteSpace(overrideDir))
+        {
+            return Path.GetFullPath(overrideDir.Trim());
+        }
+
+        if (OperatingSystem.IsWindows())
+        {
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            return Path.Combine(localAppData, ProductFolderName, "data");
+        }
+
+        return Path.Combine(GetProgramDataRoot(), "data");
+    }
+
+    public static string GetDefaultJobsDatabasePath()
+    {
+        var overridePath = Environment.GetEnvironmentVariable("ULTRACOMPRESS_JOBS_DB_PATH");
+        if (!string.IsNullOrWhiteSpace(overridePath))
+        {
+            return Path.GetFullPath(overridePath.Trim());
+        }
+
+        return Path.Combine(GetDataDirectory(), JobsDatabaseFileName);
     }
 }
