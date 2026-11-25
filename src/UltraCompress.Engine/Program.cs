@@ -6,6 +6,7 @@ using UltraCompress.Core.Workers;
 using UltraCompress.Engine;
 using UltraCompress.Engine.Grpc;
 using UltraCompress.Engine.Ipc;
+using UltraCompress.Engine.Jobs;
 using UltraCompress.Engine.Services;
 
 var logRoot = Path.Combine(
@@ -58,6 +59,16 @@ try
     builder.Services.AddSingleton<EngineRuntimeState>();
     builder.Services.AddSingleton(sp =>
     {
+        var customJobsDb = builder.Configuration.GetValue<string>("Engine:JobsDatabasePath");
+        return new SqliteJobJournal(customJobsDb);
+    });
+    builder.Services.AddSingleton(sp =>
+    {
+        var journal = sp.GetRequiredService<SqliteJobJournal>();
+        return new ResilientArchiveEngine(journal);
+    });
+    builder.Services.AddSingleton(sp =>
+    {
         var settings = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<DistributedWorkerSettings>>().Value;
         return new WorkerFleetRegistry(TimeSpan.FromSeconds(settings.HeartbeatIntervalSeconds * 2.5));
     });
@@ -68,6 +79,7 @@ try
     });
     builder.Services.AddSingleton<DistributedWorkerRuntime>();
     builder.Services.AddSingleton<WorkerProcessRunner>();
+    builder.Services.AddHostedService<ResilientArchiveHostedService>();
     builder.Services.AddHostedService<EnginePipeHostedService>();
     builder.Services.AddHostedService<EngineStartupHostedService>();
     builder.Services.AddHostedService<JobSchedulerHostedService>();

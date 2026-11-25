@@ -1,6 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <InternalsVisibleTo Include="UltraCompress.ArchiveEngine.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\UltraCompress.Core\UltraCompress.Core.csproj" />
   </ItemGroup>
 
