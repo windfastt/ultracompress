@@ -1,8 +1,6 @@
 name: GitHub Pages
 
-# Uses gh-pages branch (peaceiris) so deploy succeeds without the Pages REST enablement
-# that GITHUB_TOKEN / Cursor integration cannot create. After merge, set:
-# Settings → Pages → Deploy from branch `gh-pages` / `/ (root)`.
+# Publishes ./docs/site to branch `gh-pages` for https://windfastt.github.io/ultracompress/
 
 on:
   push:
@@ -22,11 +20,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify site artifact
+      - name: Verify site artifacts, JSON dataset & JavaScript syntax
         run: |
           test -f docs/site/index.html
+          test -f docs/site/benchmarks.html
           test -f docs/site/assets/style.css
           test -f docs/site/assets/main.js
+          test -f docs/site/data/benchmarks.json
+          python3 -m json.tool docs/site/data/benchmarks.json > /dev/null
+          node --check docs/site/assets/main.js
 
       - name: Deploy static site to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4

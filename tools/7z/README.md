@@ -33,7 +33,7 @@ Program Files\UltraCompress\
 
 - [`LICENSE-7zip.txt`](LICENSE-7zip.txt) in this directory
 - [`docs/legal/THIRD_PARTY_NOTICES.md`](../../docs/legal/THIRD_PARTY_NOTICES.md)
-- Settings → Legal in the tray app (Phase 2) will surface the same notices
+- Desktop **Settings → Legal** surfaces the same third-party notices
 
 **Corresponding source:** obtain 7-Zip source from https://www.7-zip.org/download.html or https://sourceforge.net/projects/sevenzip/ — offer language is in `LICENSE-7zip.txt`.
 

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Reproducible head-to-head benchmarks comparing UltraCompress against 7-Zip (LZMA2), Zstandard, Brotli, and GZip/LibDeflate across 6 file categories: ratio, MB/s, CPU%, Peak RAM, and CPU-seconds per GiB saved." />
+  <title>Competitor Benchmarks &amp; Reproducible Methodology — UltraCompress</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <script src="assets/main.js" defer></script>
+</head>
+<body data-benchmark-src="data/benchmarks.json">
+  <header class="site-header">
+    <div class="wrap">
+      <nav class="nav-bar" aria-label="Primary">
+        <a class="logo" href="index.html">
+          <span class="logo-mark" aria-hidden="true">UC</span>
+          UltraCompress
+          <span class="logo-tag">Benchmarks</span>
+        </a>
+        <button type="button" class="nav-toggle" data-nav-toggle aria-expanded="false" aria-controls="nav-panel">Menu</button>
+        <div class="nav-panel" id="nav-panel" data-nav-panel>
+          <ul class="nav-links">
+            <li><a href="index.html">Product Overview</a></li>
+            <li><a href="index.html#workloads">10 GB Workloads</a></li>
+            <li><a href="index.html#safety">Data Safety</a></li>
+            <li><a href="#explorer" aria-current="page">Benchmark Explorer</a></li>
+            <li><a href="#methodology">Methodology</a></li>
+          </ul>
+          <div class="nav-actions">
+            <button type="button" class="btn btn-ghost btn-sm" data-theme-toggle aria-pressed="true">Light mode</button>
+            <a class="btn btn-primary btn-sm" href="index.html#download">Download</a>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero hero-compact">
+      <div class="wrap">
+        <p class="eyebrow">Reproducible Competitor Benchmark Suite · v1.0</p>
+        <h1 style="max-width:22ch;">Apples-to-apples proof across six 10 GiB workloads.</h1>
+        <p class="hero-lead" style="max-width:68ch;">
+          Every tool runs on the exact same Windows 11 x64 NVMe testbed with identical input directories and mandatory round-trip SHA-256 verification. Inspect archive size, compression &amp; decompression throughput, system CPU utilization, Peak Working Set RAM, and total <code>CPU-seconds per GiB saved</code>.
+        </p>
+        <div class="hero-cta" style="margin-bottom:0;">
+          <a class="btn btn-primary" href="#explorer">Explore Interactive Charts</a>
+          <a class="btn btn-ghost" href="#methodology">Hardware &amp; Reproduction Guide</a>
+          <a class="btn btn-ghost" href="data/benchmarks.json">Raw JSON Artifact</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="explorer" class="section">
+      <div class="wrap" data-benchmark-explorer>
+        <div class="section-header section-header-left" style="margin-bottom:1.5rem;">
+          <h2>1. Select Workload Category &amp; Metric</h2>
+          <p>Click any workload tab, switch the charted metric, or click any column header in the full table to re-sort.</p>
+        </div>
+
+        <div class="tab-bar tab-bar-left" role="tablist" aria-label="Benchmark Categories" data-bench-cats></div>
+
+        <div class="bench-controls">
+          <div style="font-size:0.84rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);">
+            Chart Metric:
+          </div>
+          <div class="metric-pills" role="group" aria-label="Select metric to visualize" data-bench-metrics></div>
+        </div>
+
+        <div class="bench-callout" data-bench-callout></div>
+        <div class="bench-chart" data-bench-chart></div>
+
+        <div class="section-header section-header-left" style="margin:2rem 0 1rem;">
+          <h3 style="margin:0;font-size:1.25rem;">Complete Head-to-Head Measurements &amp; Exact CLI Flags</h3>
+        </div>
+        <div class="table-shell" data-bench-table>
+          <noscript>
+            <p style="padding:1rem;">Enable JavaScript to use the interactive sorter, or inspect <a href="data/benchmarks.json"><code>data/benchmarks.json</code></a> directly.</p>
+          </noscript>
+        </div>
+      </div>
+    </section>
+
+    <section id="methodology" class="section section-alt">
+      <div class="wrap">
+        <header class="section-header">
+          <p class="eyebrow">Scientific &amp; Reproducible Methodology</p>
+          <h2>How Every Number Is Collected &amp; Verified</h2>
+          <p>
+            No cherry-picked flags, no unverified outputs, and no hidden lossy preprocessing. Every competitor is tested at both practical everyday settings and high-effort archival settings.
+          </p>
+        </header>
+
+        <div class="method-grid">
+          <article class="method-card">
+            <h3>Reference Hardware &amp; OS Manifest</h3>
+            <ul data-bench-hardware>
+              <li><strong>CPU:</strong> AMD Ryzen 7 7800X3D (8 Cores / 16 Threads, Zen 4)</li>
+              <li><strong>Memory:</strong> 64 GiB DDR5-6000 CL30 Dual-Channel</li>
+              <li><strong>NVMe Storage:</strong> Samsung 990 PRO 2 TB PCIe 4.0 x4 NVMe</li>
+              <li><strong>OS &amp; Runtime:</strong> Windows 11 Pro 24H2 · .NET 8.0.11 x64 Release</li>
+            </ul>
+          </article>
+
+          <article class="method-card">
+            <h3>Fairness &amp; Measurement Rules</h3>
+            <ul>
+              <li><strong>Bit-Exact Lossless Only:</strong> Every compressed archive is extracted to a clean directory and verified against the original input tree's SHA-256 manifest.</li>
+              <li><strong>Multi-Thread Parity:</strong> Multi-threaded codecs (<code>7za -mmt=16</code>, <code>zstd -T16</code>, UltraCompress worker pool) are granted the same 16 logical threads.</li>
+              <li><strong>OS Accounting:</strong> Peak RAM is captured via Windows Job Object <code>PeakProcessMemoryUsed</code> + child worker rollup; CPU seconds sum <code>KernelTime + UserTime</code> via <code>GetProcessTimes</code>.</li>
+              <li><strong>Why <code>CPU-sec / GiB Saved</code> Matters:</strong> Divides total core-seconds consumed by net GiB saved — immediately exposing codecs that burn tens of thousands of CPU seconds on incompressible media for zero storage benefit.</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="method-card" style="margin-top:1.25rem;">
+          <h3>Reproduce Locally from Source</h3>
+          <p style="margin:0 0 0.75rem;color:var(--text-muted);font-size:0.92rem;">
+            Clone <a href="https://github.com/windfastt/ultracompress"><code>windfastt/ultracompress</code></a> on Windows 10/11 with <code>7za</code>, <code>zstd</code>, and <code>brotli</code> on <code>PATH</code> to regenerate JSON/CSV benchmark artifacts on your own hardware:
+          </p>
+          <pre class="code-block" style="margin-top:0;"><code># 1. Build solution in Release mode
+dotnet build src/UltraCompress.sln -c Release
+
+# 2. Run CI microbenchmark &amp; harness verification
+dotnet run -c Release --project tests/UltraCompress.Benchmarks -- --ci
+
+# 3. Inspect machine-readable benchmark dataset backing this explorer
+curl -sLO https://windfastt.github.io/ultracompress/data/benchmarks.json</code></pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <span>© UltraCompress Contributors · MIT License · Reproducible Benchmark Suite</span>
+      <ul class="footer-links">
+        <li><a href="index.html">Product Site</a></li>
+        <li><a href="data/benchmarks.json">benchmarks.json</a></li>
+        <li><a href="https://github.com/windfastt/ultracompress">GitHub Repository</a></li>
+        <li><a href="https://github.com/windfastt/ultracompress/blob/main/docs/profiles-and-safety.md">Profiles &amp; Safety</a></li>
+        <li><a href="https://github.com/windfastt/ultracompress/blob/main/docs/performance.md">Performance Docs</a></li>
+      </ul>
+    </div>
+  </footer>
+</body>
+</html>
