@@ -20,6 +20,8 @@ public sealed class CompressionJobRunner
 
         var map = new Dictionary<string, ICompressionBackend>(StringComparer.OrdinalIgnoreCase);
         RegisterIfAvailable(map, new ZstdCompressionBackend());
+        Register(map, new BrotliCompressionBackend());
+        Register(map, new LibDeflateCompressionBackend());
         RegisterIfAvailable(map, TryCreateSevenZipBackend());
         _backends = map;
     }
@@ -31,6 +33,9 @@ public sealed class CompressionJobRunner
             map[backend.CodecName] = backend;
         }
     }
+
+    private static void Register(Dictionary<string, ICompressionBackend> map, ICompressionBackend backend) =>
+        map[backend.CodecName] = backend;
 
     private static SevenZipProcessBackend? TryCreateSevenZipBackend()
     {
@@ -86,7 +91,13 @@ public sealed class CompressionJobRunner
     }
 
     private static string GetDefaultOutputExtension(string codec) =>
-        codec.Equals("7z", StringComparison.OrdinalIgnoreCase) ? ".uc.7z" : ".uc.zst";
+        codec.ToLowerInvariant() switch
+        {
+            "brotli" => ".uc.br",
+            "libdeflate" => ".uc.deflate",
+            "7z" => ".uc.7z",
+            _ => ".uc.zst",
+        };
 }
 
 public sealed record CompressionJobResult(
