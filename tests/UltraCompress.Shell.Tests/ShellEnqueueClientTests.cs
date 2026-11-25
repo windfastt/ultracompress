@@ -30,7 +30,7 @@ public sealed class ShellEnqueueClientTests : IDisposable
         var requestedAt = new DateTimeOffset(2025, 11, 24, 12, 0, 0, TimeSpan.Zero);
         var request = new ShellEnqueueRequest(
             new[] { @"C:\data\report.pdf", @"C:\data\logs" },
-            CompressionProfile.Small,
+            CompressionProfile.Archive,
             requestedAt);
 
         await _client.EnqueueAsync(request);
@@ -43,7 +43,7 @@ public sealed class ShellEnqueueClientTests : IDisposable
         using var doc = JsonDocument.Parse(line);
         Assert.Equal(JsonValueKind.Array, doc.RootElement.GetProperty("paths").ValueKind);
         Assert.Equal(2, doc.RootElement.GetProperty("paths").GetArrayLength());
-        Assert.Equal("Small", doc.RootElement.GetProperty("profile").GetString());
+        Assert.Equal("Archive", doc.RootElement.GetProperty("profile").GetString());
     }
 
     [Fact]

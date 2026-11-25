@@ -2,10 +2,17 @@ namespace UltraCompress.Core.Recipes;
 
 public static class RecipeStorePaths
 {
-    /// <summary>Default install location from blueprint §6.</summary>
+    public const string RecipeDatabaseEnvironmentVariable = "ULTRACOMPRESS_RECIPE_DB";
+
+    /// <summary>Default persistent SQLite recipe database path.</summary>
     public static string DefaultRecipeDatabasePath()
     {
-        var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-        return Path.Combine(programData, "UltraCompress", "recipes.db");
+        var fromEnv = Environment.GetEnvironmentVariable(RecipeDatabaseEnvironmentVariable);
+        if (!string.IsNullOrWhiteSpace(fromEnv))
+        {
+            return Path.GetFullPath(fromEnv.Trim());
+        }
+
+        return Path.Combine(EnginePaths.GetProgramDataRoot(), "recipes.db");
     }
 }

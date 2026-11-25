@@ -170,10 +170,7 @@ public sealed class EnginePipeHostedService : BackgroundService
             };
         }
 
-        if (!Enum.TryParse<CompressionProfile>(request.Profile, ignoreCase: true, out var profile))
-        {
-            profile = CompressionProfile.Balanced;
-        }
+        var profile = CompressionProfileParser.ParseOrDefault(request.Profile, CompressionProfile.Balanced);
 
         var jobId = _state.Queue.Enqueue(request.Path.Trim(), profile);
         _logger.LogInformation("Enqueued job {JobId} {Path} profile {Profile}", jobId, request.Path, profile);

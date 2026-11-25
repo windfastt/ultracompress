@@ -12,7 +12,7 @@ public class JobQueueBenchmarks
     public void Setup()
     {
         _queue = new JobQueueService();
-        for (var i = 0; i < 50; i++) _queue.Enqueue($@"C:\f{i}.bin", CompressionProfile.Small);
+        for (var i = 0; i < 50; i++) _queue.Enqueue($@"C:\f{i}.bin", CompressionProfile.Archive);
     }
     [Benchmark] public int List_jobs() => _queue.List().Count;
     [Benchmark] public string Enqueue_one() => _queue.Enqueue(@"C:\t.bin", CompressionProfile.Balanced);

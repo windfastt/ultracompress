@@ -9,7 +9,7 @@ public class InMemoryJobQueueTests
     public void Enqueue_ThenDequeue_MarksRunning()
     {
         var queue = new InMemoryJobQueue();
-        var job = queue.Enqueue(Path.GetTempFileName(), CompressionProfile.Small);
+        var job = queue.Enqueue(Path.GetTempFileName(), CompressionProfile.Archive);
 
         Assert.True(queue.TryDequeue(out var dequeued));
         Assert.NotNull(dequeued);

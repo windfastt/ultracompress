@@ -4,20 +4,20 @@ namespace UltraCompress.Core.Tests;
 
 public class TournamentCoordinatorTests
 {
-  [Fact]
-    public void TinyProfile_SelectsBetweenEightAndTwelveArms()
+    [Fact]
+    public void TinyProfile_SelectsFullSixteenArmMatrix()
     {
         var fp = SampleFingerprint(sizeBytes: 50_000);
-        var arms = PipelineArmCatalog.SelectArms(fp, CompressionProfile.Tiny, new TournamentOptions());
+        var arms = PipelineArmCatalog.SelectArms(fp, CompressionProfile.Tiny, TournamentOptions.ForProfile(CompressionProfile.Tiny));
 
-        Assert.InRange(arms.Count, 8, 12);
+        Assert.Equal(16, arms.Count);
     }
 
     [Fact]
     public void HighEntropy_SkipsToSingleFastArm()
     {
-        var fp = SampleFingerprint(entropy: 7.95);
-        var arms = PipelineArmCatalog.SelectArms(fp, CompressionProfile.Tiny, new TournamentOptions());
+        var fp = SampleFingerprint(entropy: 7.97);
+        var arms = PipelineArmCatalog.SelectArms(fp, CompressionProfile.Tiny, TournamentOptions.ForProfile(CompressionProfile.Tiny));
 
         var arm = Assert.Single(arms);
         Assert.Equal(PipelineArmCatalog.A0, arm.ArmId);
@@ -37,18 +37,14 @@ public class TournamentCoordinatorTests
             MinPullsBeforeUcbPrune = 1,
         };
 
-        var arms = PipelineArmCatalog.SelectArms(fp, CompressionProfile.Small, options);
+        var arms = PipelineArmCatalog.SelectArms(fp, CompressionProfile.Archive, options);
+        var targetWinner = arms[1].ArmId;
         var resultsByArm = arms.ToDictionary(
             a => a.ArmId,
             a => new ArmTrialResult(
                 a.ArmId,
                 1000,
-                a.ArmId switch
-                {
-                    PipelineArmCatalog.A0 => 400,
-                    PipelineArmCatalog.A2 => 350,
-                    _ => 900,
-                },
+                a.ArmId == targetWinner ? 350 : (a.ArmId == arms[0].ArmId ? 400 : 900),
                 1.0,
                 true,
                 a.Recipe));
@@ -56,7 +52,7 @@ public class TournamentCoordinatorTests
         var pulled = new List<string>();
         var result = await coordinator.RunAsync(
             fp,
-            CompressionProfile.Small,
+            CompressionProfile.Archive,
             1000,
             async (arm, _) =>
             {
@@ -67,8 +63,8 @@ public class TournamentCoordinatorTests
             options);
 
         Assert.NotNull(result.Winner);
-        Assert.Equal(PipelineArmCatalog.A2, result.Winner.ArmId);
-        Assert.Contains(PipelineArmCatalog.A2, pulled);
+        Assert.Equal(targetWinner, result.Winner.ArmId);
+        Assert.Contains(targetWinner, pulled);
     }
 
     [Fact]
@@ -86,24 +82,22 @@ public class TournamentCoordinatorTests
             MinPullsBeforeUcbPrune = 1,
         };
 
+        var arms = PipelineArmCatalog.SelectArms(fp, CompressionProfile.Archive, options);
+        var winnerArmId = arms[1].ArmId;
         var pullCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
         var result = await coordinator.RunAsync(
             fp,
-            CompressionProfile.Small,
+            CompressionProfile.Archive,
             10_000,
             async (arm, _) =>
             {
                 pullCounts.TryGetValue(arm.ArmId, out var n);
                 pullCounts[arm.ArmId] = n + 1;
 
-                var compressed = arm.ArmId switch
-                {
-                    PipelineArmCatalog.A0 => 3000,
-                    PipelineArmCatalog.A2 => 2500,
-                    PipelineArmCatalog.A3 => 2550,
-                    _ => 8000,
-                };
+                var compressed = arm.ArmId == winnerArmId
+                    ? 2500
+                    : (arm.ArmId == arms[0].ArmId ? 3000 : 8000);
 
                 await Task.Delay(10);
                 return new ArmTrialResult(arm.ArmId, 10_000, compressed, 2.0, true, arm.Recipe);
@@ -111,7 +105,7 @@ public class TournamentCoordinatorTests
             options);
 
         Assert.NotNull(result.Winner);
-        Assert.Equal(PipelineArmCatalog.A2, result.Winner.ArmId);
+        Assert.Equal(winnerArmId, result.Winner.ArmId);
         Assert.InRange(pullCounts.Values.Sum(), 4, 16);
         Assert.True(
             result.StopReason is TournamentStopReason.UcbEarlyStop
@@ -123,7 +117,7 @@ public class TournamentCoordinatorTests
     [Fact]
     public void ArmTrialResult_Reward_UsesBytesSavedPerSecond()
     {
-        var trial = new ArmTrialResult("A0", 1000, 800, 2.0, true, new PipelineRecipe());
+        var trial = new ArmTrialResult("raw-zstd", 1000, 800, 2.0, true, new PipelineRecipe());
         Assert.Equal(100, trial.Reward);
     }
 

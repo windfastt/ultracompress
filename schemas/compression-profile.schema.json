@@ -3,5 +3,5 @@
   "$id": "https://ultracompress.dev/schemas/compression-profile.schema.json",
   "title": "CompressionProfile",
   "type": "string",
-  "enum": ["Balanced", "Small", "Tiny", "Laboratory", "Experimental"]
+  "enum": ["Instant", "Balanced", "Archive", "Tiny", "Laboratory"]
 }

@@ -121,9 +121,7 @@ static async Task RunLeaseLoopAsync(
         }
 
         var step = lease.Step;
-        var profile = Enum.TryParse<CompressionProfile>(step.Profile, true, out var p)
-            ? p
-            : CompressionProfile.Small;
+        var profile = CompressionProfileParser.ParseOrDefault(step.Profile, CompressionProfile.Archive);
 
         ReportStepResultRequest report;
         try

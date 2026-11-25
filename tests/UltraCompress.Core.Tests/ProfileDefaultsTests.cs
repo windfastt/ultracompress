@@ -5,8 +5,9 @@ namespace UltraCompress.Core.Tests;
 public class ProfileDefaultsTests
 {
     [Theory]
+    [InlineData(CompressionProfile.Instant)]
     [InlineData(CompressionProfile.Balanced)]
-    [InlineData(CompressionProfile.Small)]
+    [InlineData(CompressionProfile.Archive)]
     [InlineData(CompressionProfile.Tiny)]
     public void CreateDefaultRecipe_IncludesZstdCompressStep(CompressionProfile profile)
     {

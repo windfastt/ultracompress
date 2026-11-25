@@ -1,10 +1,10 @@
-using System.Security.Cryptography;
 using UltraCompress.Core;
+using UltraCompress.Core.Safety;
 
 namespace UltraCompress.Worker.Verification;
 
 /// <summary>
-/// Verifies lossless round-trip when recipe.verify requests it (stub: full pipeline integration in Phase 1+).
+/// Verifies lossless round-trip using dual SHA-256 and XXH64 checksums plus byte-exact sequence comparison.
 /// </summary>
 public sealed class RoundtripVerifier
 {
@@ -15,29 +15,35 @@ public sealed class RoundtripVerifier
             return VerificationResult.Skipped("Round-trip verification disabled by recipe.");
         }
 
-        if (!original.AsSpan().SequenceEqual(roundtripped))
+        var bitExact = BitExactVerifier.Verify(original, roundtripped);
+        if (!bitExact.Passed)
         {
-            return VerificationResult.Failed("Decompressed bytes do not match original.");
+            return VerificationResult.Failed(bitExact.Message);
         }
 
-        if (options.HashOriginal)
-        {
-            var hash = Convert.ToHexString(SHA256.HashData(original)).ToLowerInvariant();
-            return VerificationResult.Success(hash);
-        }
-
-        return VerificationResult.Success(null);
+        return options.HashOriginal
+            ? VerificationResult.Success(bitExact.OriginalSha256, bitExact.OriginalXxHash64Hex)
+            : VerificationResult.Success(null, bitExact.OriginalXxHash64Hex);
     }
+
+    public static VerificationResult FromBitExact(BitExactVerificationResult bitExact) =>
+        bitExact.Passed
+            ? VerificationResult.Success(bitExact.OriginalSha256, bitExact.OriginalXxHash64Hex)
+            : VerificationResult.Failed(bitExact.Message);
 }
 
-public sealed record VerificationResult(bool Passed, string? OriginalSha256, string Message)
+public sealed record VerificationResult(
+    bool Passed,
+    string? OriginalSha256,
+    string Message,
+    string? OriginalXxHash64 = null)
 {
-    public static VerificationResult Success(string? sha256) =>
-        new(true, sha256, "Round-trip verification passed.");
+    public static VerificationResult Success(string? sha256, string? xxHash64 = null) =>
+        new(true, sha256, "Bit-exact round-trip verification passed.", xxHash64);
 
     public static VerificationResult Failed(string message) =>
-        new(false, null, message);
+        new(false, null, message, null);
 
     public static VerificationResult Skipped(string message) =>
-        new(true, null, message);
+        new(true, null, message, null);
 }

@@ -11,7 +11,7 @@ public sealed class JobQueueServiceTests
         var queue = new JobQueueService();
         var state = new EngineRuntimeState(queue);
 
-        var id = queue.Enqueue(@"C:\data\file.bin", CompressionProfile.Small);
+        var id = queue.Enqueue(@"C:\data\file.bin", CompressionProfile.Archive);
         Assert.Equal(1, state.QueuedJobs);
         Assert.True(queue.Cancel(id));
         Assert.Equal(0, state.QueuedJobs);
