@@ -22,17 +22,8 @@ internal static class JobMapper
             CompressedBytes = job.CompressedBytes ?? 0,
         };
 
-    public static CompressionProfile ParseProfile(string profile)
-    {
-        if (string.IsNullOrWhiteSpace(profile))
-        {
-            return CompressionProfile.Balanced;
-        }
-
-        return Enum.TryParse<CompressionProfile>(profile, ignoreCase: true, out var parsed)
-            ? parsed
-            : CompressionProfile.Balanced;
-    }
+    public static CompressionProfile ParseProfile(string profile) =>
+        CompressionProfileParser.ParseOrDefault(profile, CompressionProfile.Balanced);
 
     public static ProtoStatus ToProtoStatus(JobStatus status) => status switch
     {

@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -22,6 +22,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltraCompress.Benchmarks", "..\tests\UltraCompress.Benchmarks\UltraCompress.Benchmarks.csproj", "{E1F2A3B4-C5D6-7890-ABCD-EF123456789A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltraCompress.Shell.Tests", "..\tests\UltraCompress.Shell.Tests\UltraCompress.Shell.Tests.csproj", "{C5F60719-9DD0-4E7D-AFF8-B3680AA7148F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UltraCompress.SafetyAndProfiles.Tests", "..\tests\UltraCompress.SafetyAndProfiles.Tests\UltraCompress.SafetyAndProfiles.Tests.csproj", "{D8B13BAA-D047-4BE2-A532-23D6C0C8ABB5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -72,5 +74,9 @@ Global
 		{C5F60719-9DD0-4E7D-AFF8-B3680AA7148F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5F60719-9DD0-4E7D-AFF8-B3680AA7148F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C5F60719-9DD0-4E7D-AFF8-B3680AA7148F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8B13BAA-D047-4BE2-A532-23D6C0C8ABB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8B13BAA-D047-4BE2-A532-23D6C0C8ABB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8B13BAA-D047-4BE2-A532-23D6C0C8ABB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8B13BAA-D047-4BE2-A532-23D6C0C8ABB5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

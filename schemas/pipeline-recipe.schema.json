@@ -20,7 +20,7 @@
     "verify": { "$ref": "#/$defs/verifyOptions" },
     "profile": {
       "type": "string",
-      "enum": ["Balanced", "Small", "Tiny", "Laboratory", "Experimental"]
+      "enum": ["Instant", "Balanced", "Archive", "Tiny", "Laboratory"]
     }
   },
   "$defs": {
@@ -61,7 +61,7 @@
         "codec": {
           "type": "string",
           "minLength": 1,
-          "enum": ["zstd", "7z", "xz", "brotli", "gzip", "deflate", "lzma", "custom"]
+          "enum": ["store", "zstd", "7z", "xz", "brotli", "libdeflate", "gzip", "deflate", "lzma", "custom"]
         },
         "level": { "type": "integer", "minimum": 0, "maximum": 22, "default": 3 },
         "dictSizeKb": { "type": ["integer", "null"], "minimum": 0 },

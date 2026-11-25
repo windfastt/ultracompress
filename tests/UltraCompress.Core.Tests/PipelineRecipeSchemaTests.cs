@@ -80,8 +80,11 @@ public class PipelineRecipeSchemaTests
     }
 
     [Theory]
+    [InlineData(CompressionProfile.Instant)]
     [InlineData(CompressionProfile.Balanced)]
-    [InlineData(CompressionProfile.Experimental)]
+    [InlineData(CompressionProfile.Archive)]
+    [InlineData(CompressionProfile.Tiny)]
+    [InlineData(CompressionProfile.Laboratory)]
     public void CompressionProfile_IsStringInJson(CompressionProfile profile)
     {
         var json = JsonSerializer.Serialize(profile, PipelineRecipeJson.Options);

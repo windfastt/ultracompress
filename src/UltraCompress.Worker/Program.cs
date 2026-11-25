@@ -18,7 +18,7 @@ internal static class Program
         var profileOption = new Option<CompressionProfile>(
             name: "--profile",
             getDefaultValue: () => CompressionProfile.Balanced,
-            description: "Compression profile (Balanced, Small, Tiny, Laboratory, Experimental)")
+            description: "Compression profile (Instant, Balanced, Archive, Tiny, Laboratory)")
         { IsRequired = false };
         profileOption.AddAlias("-p");
 

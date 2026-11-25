@@ -15,7 +15,7 @@ public sealed class WorkerStepQueueTests
             JobId = Guid.NewGuid(),
             InputPath = "/tmp/a.bin",
             OutputPath = "/tmp/a.uc.zst",
-            Profile = CompressionProfile.Small,
+            Profile = CompressionProfile.Archive,
         });
 
         var waitTask = queue.WaitForStepAsync(step.StepId, CancellationToken.None);

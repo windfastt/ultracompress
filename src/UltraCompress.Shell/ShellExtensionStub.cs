@@ -12,7 +12,7 @@ public static class ShellExtensionStub
 
     public static Task InvokeExplorerCommandAsync(
         IReadOnlyList<string> selectedPaths,
-        CompressionProfile profile = CompressionProfile.Small,
+        CompressionProfile profile = CompressionProfile.Archive,
         string? queueDirectory = null,
         CancellationToken cancellationToken = default)
     {
