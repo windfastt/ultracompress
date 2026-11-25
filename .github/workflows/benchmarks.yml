@@ -1,0 +1,93 @@
+name: Competitor Benchmarks
+
+on:
+  push:
+    branches: [main, 'feat/**', 'release/**']
+  pull_request:
+    branches: [main, ultracompress-main]
+  workflow_dispatch:
+    inputs:
+      scale:
+        description: 'Corpus scale (Smoke or Standard)'
+        required: false
+        default: 'Smoke'
+        type: choice
+        options:
+          - Smoke
+          - Standard
+
+jobs:
+  benchmark-linux:
+    name: Reproducible Benchmarks (Ubuntu x64 — All Competitors)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Install competitor CLI tools & GNU time
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y 7zip p7zip-full zstd brotli gzip libdeflate-tools time
+
+      - name: Run benchmark unit & determinism tests
+        run: dotnet test benchmarks/UltraCompress.Benchmarks.Tests/UltraCompress.Benchmarks.Tests.csproj -c Release
+
+      - name: Run benchmark suite & SHA-256 verification
+        run: |
+          chmod +x ./scripts/run-benchmarks.sh
+          SCALE="${{ inputs.scale || 'Smoke' }}"
+          if [ "$SCALE" = "Smoke" ]; then
+            ./scripts/run-benchmarks.sh --smoke --verify-determinism --require-all-competitors --output-dir artifacts/benchmarks-linux
+          else
+            ./scripts/run-benchmarks.sh --scale "$SCALE" --verify-determinism --require-all-competitors --output-dir artifacts/benchmarks-linux
+          fi
+
+      - name: Upload Linux benchmark report artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-report-linux
+          path: |
+            artifacts/benchmarks-linux/latest-benchmark-report.json
+            artifacts/benchmarks-linux/latest-benchmark-report.csv
+
+  benchmark-windows:
+    name: Reproducible Benchmarks (Windows x64)
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Ensure 7-Zip & Zstandard CLI on PATH
+        shell: pwsh
+        run: |
+          choco install 7zip zstandard --no-progress -y
+          $sevenZip = Join-Path ${env:ProgramFiles} "7-Zip\7z.exe"
+          if (Test-Path $sevenZip) {
+            "ULTRACOMPRESS_7ZA_PATH=$sevenZip" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            Split-Path $sevenZip -Parent | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          }
+
+      - name: Run benchmark unit & determinism tests
+        run: dotnet test benchmarks/UltraCompress.Benchmarks.Tests/UltraCompress.Benchmarks.Tests.csproj -c Release
+
+      - name: Run PowerShell benchmark smoke & determinism check
+        shell: pwsh
+        run: ./scripts/run-benchmarks.ps1 -Smoke -VerifyDeterminism -OutputDir artifacts/benchmarks-windows
+
+      - name: Upload Windows benchmark report artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-report-windows
+          path: |
+            artifacts/benchmarks-windows/latest-benchmark-report.json
+            artifacts/benchmarks-windows/latest-benchmark-report.csv
