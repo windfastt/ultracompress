@@ -42,10 +42,7 @@ public sealed class DistributedWorkerRuntime
             return fromEnv.Trim();
         }
 
-        var path = string.IsNullOrWhiteSpace(settings.WorkerTokenFile)
-            ? EnginePaths.GetDefaultWorkerTokenPath()
-            : settings.WorkerTokenFile;
-
-        return WorkerTokenValidator.LoadTokenFromFile(path);
+        var path = WorkerTokenFileLifecycle.ResolveReadPath(settings.WorkerTokenFile);
+        return WorkerTokenFileLifecycle.ReadTokenOrEmpty(path);
     }
 }

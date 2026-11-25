@@ -25,6 +25,32 @@
       "maximum": 8,
       "description": "Shannon entropy in bits per byte."
     },
+    "extension": {
+      "type": "string",
+      "description": "File extension including the dot, when present."
+    },
+    "blockEntropies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["offset", "length", "entropyBitsPerByte"],
+        "properties": {
+          "offset": { "type": "integer", "minimum": 0 },
+          "length": { "type": "integer", "minimum": 1 },
+          "entropyBitsPerByte": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 8
+          }
+        }
+      },
+      "description": "Per-block entropy samples from FileProbe."
+    },
+    "likelyAlreadyCompressed": {
+      "type": "boolean",
+      "description": "True when global entropy suggests compressed or encrypted payload."
+    },
     "sizeClass": {
       "type": "string",
       "enum": ["tiny", "small", "medium", "large"],
