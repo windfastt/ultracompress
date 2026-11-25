@@ -9,6 +9,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="UltraCompress.Core.Tests" />
     <InternalsVisibleTo Include="UltraCompress.ArchiveEngine.Tests" />
+    <InternalsVisibleTo Include="UltraCompress.Intelligence.Tests" />
   </ItemGroup>
 
   <ItemGroup>

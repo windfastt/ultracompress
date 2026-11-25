@@ -5,10 +5,12 @@ using System.CommandLine.Parsing;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using UltraCompress.Core;
+using UltraCompress.Core.Advisor;
 using UltraCompress.Core.Archive;
 using UltraCompress.Core.Destination;
 using UltraCompress.Core.Errors;
 using UltraCompress.Core.History;
+using UltraCompress.Core.Intelligence;
 
 namespace UltraCompress.Worker;
 
@@ -21,6 +23,7 @@ public static class WorkerCli
         var root = new RootCommand("UltraCompress CLI — content-aware .ucx archive manager & lossless compressor");
 
         root.AddCommand(BuildSingleCompressCommand());
+        root.AddCommand(BuildAnalyzeCommand());
         root.AddCommand(BuildPackCommand());
         root.AddCommand(BuildListCommand());
         root.AddCommand(BuildExtractCommand());
@@ -59,14 +62,21 @@ public static class WorkerCli
 
         var outputOption = new Option<FileInfo?>(
             name: "--output",
-            description: "Output path (default: <input>.uc.zst / .uc.br / .uc.deflate / .uc.7z by codec)");
+            description: "Output path (default: <input>.uc.raw / .uc.zst / .uc.br / .uc.deflate / .uc.7z by codec)");
         outputOption.AddAlias("-o");
 
-        var compressCommand = new Command("compress", "Compress a single file using the profile default recipe")
+        var explainOption = new Option<bool>(
+            name: "--explain",
+            getDefaultValue: () => false,
+            description: "Print the explainable StrategyDecisionReport rationale table alongside compression");
+        explainOption.AddAlias("-e");
+
+        var compressCommand = new Command("compress", "Compress a single file using the content-intelligent lossless advisor")
         {
             inputOption,
             profileOption,
             outputOption,
+            explainOption,
         };
 
         compressCommand.SetHandler(async (InvocationContext ctx) =>
@@ -74,9 +84,19 @@ public static class WorkerCli
             var input = ctx.ParseResult.GetValueForOption(inputOption)!;
             var profile = ctx.ParseResult.GetValueForOption(profileOption);
             var output = ctx.ParseResult.GetValueForOption(outputOption);
+            var explain = ctx.ParseResult.GetValueForOption(explainOption);
 
             try
             {
+                if (explain && input.Exists)
+                {
+                    var decisionReport = await PipelineAdvisor.ExplainPathAsync(
+                        input.FullName,
+                        profile,
+                        cancellationToken: ctx.GetCancellationToken()).ConfigureAwait(false);
+                    ctx.Console.Out.WriteLine(StrategyReportFormatter.FormatHumanReadable(decisionReport, detailedExplain: true));
+                }
+
                 var runner = new CompressionJobRunner();
                 var result = await runner.RunAsync(
                     input.FullName,
@@ -100,6 +120,95 @@ public static class WorkerCli
         });
 
         return compressCommand;
+    }
+
+    private static Command BuildAnalyzeCommand()
+    {
+        var targetArgument = new Argument<string?>(
+            name: "target",
+            getDefaultValue: () => null,
+            description: "File or directory path to inspect (O(1) multi-window sampling)");
+
+        var inputOption = new Option<string?>(
+            name: "--input",
+            description: "File or directory path to inspect (alternative to positional <target>)");
+        inputOption.AddAlias("-i");
+
+        var profileOption = new Option<CompressionProfile>(
+            name: "--profile",
+            getDefaultValue: () => CompressionProfile.Balanced,
+            description: "Target lossless compression profile (Instant, Balanced, Archive, Tiny, Laboratory)");
+        profileOption.AddAlias("-p");
+
+        var explainOption = new Option<bool>(
+            name: "--explain",
+            getDefaultValue: () => false,
+            description: "Include full multi-window signal breakdown, per-route split, and rejected alternatives");
+        explainOption.AddAlias("-e");
+
+        var jsonOption = new Option<bool>(
+            name: "--json",
+            getDefaultValue: () => false,
+            description: "Emit structured StrategyDecisionReport JSON to stdout");
+
+        var cmd = new Command(
+            "analyze",
+            "Inspect a file or directory in O(1) memory and output an explainable lossless StrategyDecisionReport.\n" +
+            "Examples:\n" +
+            "  uc analyze ./video.mp4 --explain\n" +
+            "  uc analyze --input ./photos --profile Tiny --explain\n" +
+            "  uc analyze ./backup.sqlite --json")
+        {
+            targetArgument,
+            inputOption,
+            profileOption,
+            explainOption,
+            jsonOption,
+        };
+
+        cmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var targetArg = ctx.ParseResult.GetValueForArgument(targetArgument);
+            var inputOpt = ctx.ParseResult.GetValueForOption(inputOption);
+            var profile = ctx.ParseResult.GetValueForOption(profileOption);
+            var explain = ctx.ParseResult.GetValueForOption(explainOption);
+            var asJson = ctx.ParseResult.GetValueForOption(jsonOption);
+
+            var rawPath = !string.IsNullOrWhiteSpace(inputOpt) ? inputOpt : targetArg;
+            if (string.IsNullOrWhiteSpace(rawPath))
+            {
+                ctx.Console.Error.WriteLine("Error: No target file or directory specified for 'analyze'.");
+                ctx.Console.Error.WriteLine("  Example: uc analyze ./path/to/file-or-folder --explain");
+                ctx.Console.Error.WriteLine("  Example: uc analyze --input ./path/to/file-or-folder --json");
+                ctx.ExitCode = 3;
+                return;
+            }
+
+            try
+            {
+                var report = await StrategySelector.AnalyzePathAsync(
+                    rawPath,
+                    profile,
+                    cancellationToken: ctx.GetCancellationToken()).ConfigureAwait(false);
+
+                if (asJson)
+                {
+                    ctx.Console.Out.WriteLine(StrategyReportFormatter.ToJson(report));
+                }
+                else
+                {
+                    ctx.Console.Out.Write(StrategyReportFormatter.FormatHumanReadable(report, detailedExplain: explain));
+                }
+
+                ctx.ExitCode = 0;
+            }
+            catch (Exception ex)
+            {
+                WriteFormattedError(ctx, ex, rawPath);
+            }
+        });
+
+        return cmd;
     }
 
     private static Command BuildPackCommand()

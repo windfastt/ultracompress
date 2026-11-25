@@ -21,16 +21,19 @@ public class PipelineAdvisorTests
         };
 
     [Fact]
-    public void Plan_HighEntropy_UsesFastLosslessOnly()
+    public void Plan_HighEntropy_SelectsStoreFastStreamBypass()
     {
         var plan = PipelineAdvisor.Plan(Fp("data.bin", entropy: 7.96), CompressionProfile.Tiny);
 
-        Assert.Equal("zstd", plan.PrimaryCodec.Codec);
-        Assert.Equal(1, plan.PrimaryCodec.Level);
+        Assert.Equal("store", plan.PrimaryCodec.Codec);
+        Assert.Equal(0, plan.PrimaryCodec.Level);
         Assert.Empty(plan.TournamentCandidates);
         Assert.Contains(plan.Decisions, d => d.RuleId == AdvisorRuleIds.EntropyGate);
+        Assert.NotNull(plan.DecisionReport);
+        Assert.Equal(OperationKind.LosslessCompression, plan.DecisionReport!.OperationKind);
         var step = Assert.Single(plan.PrimaryRecipe.Steps, s => s is PreprocessStep) as PreprocessStep;
         Assert.Equal("raw", step!.Name);
+        SafetyPolicy.ValidateCompressionProfileRecipe(CompressionProfile.Tiny, plan.PrimaryRecipe);
     }
 
     [Fact]
@@ -52,6 +55,7 @@ public class PipelineAdvisorTests
         var preprocess = plan.PrimaryRecipe.Steps.OfType<PreprocessStep>().First();
         Assert.Equal("raw", preprocess.Name);
         Assert.Contains(plan.Decisions, d => d.RuleId == AdvisorRuleIds.EntropySkipReencode);
+        SafetyPolicy.ValidateCompressionProfileRecipe(CompressionProfile.Archive, plan.PrimaryRecipe);
     }
 
     [Fact]
@@ -63,6 +67,7 @@ public class PipelineAdvisorTests
 
         var preprocess = plan.PrimaryRecipe.Steps.OfType<PreprocessStep>().First();
         Assert.Equal("byteshuffle", preprocess.Name);
+        SafetyPolicy.ValidateCompressionProfileRecipe(CompressionProfile.Balanced, plan.PrimaryRecipe);
     }
 
     [Theory]
