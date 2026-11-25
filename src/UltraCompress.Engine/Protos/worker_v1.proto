@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+option csharp_namespace = "UltraCompress.Engine.Grpc";
+
+package ultracompress.worker.v1;
+
+service WorkerService {
+  rpc Heartbeat (HeartbeatRequest) returns (HeartbeatResponse);
+  rpc LeaseStep (LeaseStepRequest) returns (LeaseStepResponse);
+  rpc ReportStepResult (ReportStepResultRequest) returns (ReportStepResultResponse);
+}
+
+message HeartbeatRequest {
+  string worker_id = 1;
+  string machine_name = 2;
+  int32 max_parallel_steps = 3;
+}
+
+message HeartbeatResponse {
+  bool accepted = 1;
+  int32 heartbeat_interval_ms = 2;
+  int32 lease_ttl_ms = 3;
+}
+
+message LeaseStepRequest {
+  string worker_id = 1;
+  int64 wait_timeout_ms = 2;
+}
+
+message LeaseStepResponse {
+  bool leased = 1;
+  StepAssignment step = 2;
+}
+
+message StepAssignment {
+  string step_id = 1;
+  string job_id = 2;
+  string input_path = 3;
+  string output_path = 4;
+  string profile = 5;
+  int64 lease_expires_unix_ms = 6;
+}
+
+message ReportStepResultRequest {
+  string worker_id = 1;
+  string step_id = 2;
+  bool succeeded = 3;
+  string error_message = 4;
+  optional int64 original_bytes = 5;
+  optional int64 compressed_bytes = 6;
+  optional string output_path = 7;
+}
+
+message ReportStepResultResponse {
+  bool accepted = 1;
+}
